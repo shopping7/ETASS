@@ -18,7 +18,7 @@
 </head>
 <body>
 <div class="container" style="width: 400px;">
-    <h3 style="text-align: center;">管理员登录</h3>
+    <h3 style="text-align: center;">用户登录</h3>
     <form action="${pageContext.request.contextPath}/loginServlet" method="post">
         <div class="form-group">
             <label for="user">用户名：</label>

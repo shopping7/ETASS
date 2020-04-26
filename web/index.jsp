@@ -21,17 +21,20 @@
 <body>
 
 
-<div >${user.username},欢迎您</div>
-<div align="center">
-<%--  <a--%>
-<%--          href="${pageContext.request.contextPath}/findUserByPageServlet" style="text-decoration:none;font-size:33px">查询所有用户信息--%>
-<%--  </a>--%>
-  <div style="width: 40%">
+<div>
+  <h2>${user.username},欢迎您</h2>
+  <span>您的属性为：H1, P1, D1, D2, H2, P2, D3, P3, D4</span>
+</div>
+
+<div align="center" >
+  <div style="width: 60%">
     <h1>上传文件</h1>
     <form action="${pageContext.request.contextPath}/loginServlet">
       <div class="form-group">
-        <label for="exampleInputEmail1">文件关键词</label>
-        <input type="text" class="form-control" id="exampleInputEmail1">
+        <label>文件关键词</label>
+        <input type="text" class="form-control" id="kw_1">
+        <input type="text" class="form-control" name="kw_2">
+        <input type="text" class="form-control" name="kw_3">
       </div>
       <div class="form-group">
         <label for="exampleInputPassword1">文件访问策略</label>
@@ -44,23 +47,26 @@
 <%--      </div>--%>
       <div class="form-group">
         <label for="exampleInputPassword1">加密信息</label>
-        <input type="text" class="form-control" id="exampleInputPassword2">
+        <input type="text" class="form-control" id="msg">
       </div>
       <button type="submit" class="btn btn-default">提交</button>
     </form>
   </div>
 
-  <div>
+  <div style="width: 60%">
     <h1>提取文件</h1>
-    <form>
+    <form action="${pageContext.request.contextPath}/GetFileServlet" method="post">
       <div class="form-group">
-        <label for="exampleInputEmail1">文件关键词</label>
-        <input type="text" class="form-control" >
+        <label>文件关键词</label>
+        <input type="text" class="form-control" name="kw_trapdoor_1">
+        <input type="text" class="form-control" name="kw_trapdoor_2">
+        <input type="text" class="form-control" name="kw_trapdoor_3">
       </div>
 
 
       <button type="submit" class="btn btn-default">提交</button>
     </form>
+    <strong>${str}</strong>
   </div>
 
 </div>
