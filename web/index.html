@@ -1,6 +1,6 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
+<head>
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -12,15 +12,81 @@
     <script src="js/jquery-2.1.0.min.js"></script>
     <!-- 3. 导入bootstrap的js文件 -->
     <script src="js/bootstrap.min.js"></script>
-    <script type="text/javascript">
-
+    <script>
+        $(function () {
+            $('#btn_getFile').click(function () {
+                //2.发送ajax请求，提交表单数据
+                $.post("getFileServlet",$("#form_getFile").serialize(),function (data) {
+                    if(data.flag){
+                        alert(data.errorMsg);
+                    }else{
+                        //登录失败
+                        $("#getmsg").html(data.errorMsg);
+                    }
+                });
+            });
+            $('#btn_upload_file').click(function () {
+                //2.发送ajax请求，提交表单数据
+                $.post("uploadFileServlet",$("#form_upload_file").serialize(),function (data) {
+                    alert(data.errorMsg);
+                });
+            });
+        });
     </script>
-  </head>
-  <body>
-  <div align="center">
-  	<a
-	  href="list.html" style="text-decoration:none;font-size:33px">查询所有用户信息
-	</a>
-  </div>
-  </body>
+</head>
+<body>
+
+
+<div>
+    <h2>欢迎您</h2>
+    <span>您的属性为：H1, P1, D1, D2, H2, P2, D3, P3, D4</span>
+</div>
+
+<div align="center" >
+    <div style="width: 60%">
+        <h1>上传文件</h1>
+        <form id="form_upload_file">
+            <div class="form-group">
+                <label>文件关键词</label>
+                <input type="text" class="form-control" id="kw_1">
+                <input type="text" class="form-control" name="kw_2">
+                <input type="text" class="form-control" name="kw_3">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputPassword1">文件访问策略</label>
+                <input type="text" class="form-control" id="exampleInputPassword1" placeholder="未完成">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputPassword1">加密信息</label>
+                <input type="text" class="form-control" id="msg">
+            </div>
+<!--            <div class="form-group">-->
+<!--                <label for="exampleInputFile">File input</label>-->
+<!--                <input type="file" id="exampleInputFile">-->
+<!--                <p class="help-block">Example block-level help text here.</p>-->
+<!--            </div>-->
+            <button type="button" class="btn btn-default" id="btn_upload_file">提交</button>
+        </form>
+    </div>
+
+    <div style="width: 60%">
+        <h1>提取文件</h1>
+        <form id="form_getFile">
+            <div class="form-group">
+                <label>文件关键词</label>
+                <input type="text" class="form-control" name="kw_trapdoor_1">
+                <input type="text" class="form-control" name="kw_trapdoor_2">
+                <input type="text" class="form-control" name="kw_trapdoor_3">
+            </div>
+
+
+            <button type="button" class="btn btn-default" id="btn_getFile">提交</button>
+        </form>
+        <div id="getmsg" style="color:red;text-align: center"></div>
+    </div>
+
+</div>
+
+
+</body>
 </html>

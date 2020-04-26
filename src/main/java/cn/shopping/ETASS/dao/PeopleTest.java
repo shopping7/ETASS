@@ -11,7 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Calendar;
 
-public class test2 {
+public class PeopleTest {
     public static void main(String[] args) throws Exception {
         People p = new People();
         p.setName("99".getBytes());

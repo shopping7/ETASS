@@ -10,19 +10,19 @@ public class SK implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Element D1;
+    private byte[] D1;
 
-    private Element D1_1;
+    private byte[] D1_1;
 
-    private Element D2;
+    private byte[] D2;
 
-    private Element D2_1;
+    private byte[] D2_1;
 
-    private Element D3[];
+    private byte[][] D3;
 
-    private Element D4;
+    private byte[] D4;
 
-    private Element xid;
+    private byte[] xid;
 
     private String zeta;
 

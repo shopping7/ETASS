@@ -1,8 +1,6 @@
 package cn.shopping.ETASS.dao;
 
-import cn.shopping.ETASS.domain.pv.CTAndVKM;
-import cn.shopping.ETASS.domain.pv.MSK;
-import cn.shopping.ETASS.domain.pv.PP;
+import cn.shopping.ETASS.domain.pv.*;
 import it.unisa.dia.gas.jpbc.Element;
 
 import java.io.IOException;
@@ -11,13 +9,21 @@ import java.sql.SQLException;
 
 public interface AlgorithmDao {
 
-    PP getPp() throws Exception;
+    void setup(PPAndMSK ppandmsk);
 
-    MSK getMsk();
+    PPAndMSK getPpAndMsk();
 
-    void addUL(String encoded, Element Did) throws IOException, Exception;
+    void setPKAndSK(String id, PKAndSKAndID pkandsk);
 
-    byte[] getDid(String theta) throws SQLException, Exception;
+    PKAndSKAndID getPKAndSKAndID(String id);
+
+    void addUL(String encoded, Element Did);
+
+    void addS(String user_id,Element s);
+
+    byte[] getS(String user_id);
+
+    byte[] getDid(String theta);
 
     void upload(CTAndVKM ctandvkm);
 

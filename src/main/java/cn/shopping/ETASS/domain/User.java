@@ -18,6 +18,8 @@ public class User {
 
     private String password;
 
+    private String user_id;
+
     private String[] attribute;
 
     private Element pk;

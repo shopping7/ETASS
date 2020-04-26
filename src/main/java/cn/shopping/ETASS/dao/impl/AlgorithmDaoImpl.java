@@ -1,12 +1,9 @@
 package cn.shopping.ETASS.dao.impl;
 
 import cn.shopping.ETASS.dao.AlgorithmDao;
-import cn.shopping.ETASS.dao.People;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.util.JDBCUtils;
-import cn.shopping.ETASS.util.JDBCUtils_1;
 import it.unisa.dia.gas.jpbc.Element;
-import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.*;
@@ -14,73 +11,125 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Calendar;
 
 public class AlgorithmDaoImpl implements AlgorithmDao {
 
-    private JdbcTemplate template = new JdbcTemplate(JDBCUtils_1.getDataSource());
+//    private JdbcTemplate template = new JdbcTemplate(JDBCUtils_1.getDataSource());
 
-    //
-//
     @Override
-    public PP getPp() {
-//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//        ObjectOutputStream oos = new ObjectOutputStream(bos);
-//        oos.writeObject(pp);
-////
-//        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
-//        ObjectOutputStream oos_1 = new ObjectOutputStream(bos_1);
-//        oos_1.writeObject(msk);
-//
+    public void setup(PPAndMSK ppandmsk) {
+        Connection connection = null;
+        PreparedStatement ps = null;
+        PP pp = ppandmsk.getPp();
+        MSK msk = ppandmsk.getMsk();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
+        ObjectOutputStream oos = null;
+        ObjectOutputStream oos_1 = null;
+        try {
+            oos = new ObjectOutputStream(bos);
+            oos.writeObject(pp);
+            oos_1 = new ObjectOutputStream(bos_1);
+            oos_1.writeObject(msk);
+            connection = JDBCUtils.getConnection();
+            ps = connection.prepareStatement("insert into setup (pp,msk) value(?,?)");
+            ps.setBytes(1, bos.toByteArray());
+            ps.setBytes(2,bos_1.toByteArray());
+            ps.executeUpdate();
+
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
+        }finally {
+            JDBCUtils.close(ps, connection);
+        }
+    }
+
+    @Override
+    public PPAndMSK getPpAndMsk() {
         Connection connection = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
         try {
             connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("select id,pp from pp");
+            ps = connection.prepareStatement("select pp,msk from setup");
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
-                System.out.println(resultSet.getInt(1));
-                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(2));
+                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(1));
                 ObjectInputStream ois = new ObjectInputStream(bis);
                 PP pp = (PP) ois.readObject();
+                bis = new ByteArrayInputStream(resultSet.getBytes(2));
+                ois = new ObjectInputStream(bis);
+                MSK msk = (MSK) ois.readObject();
 
-                return pp;
-
+                PPAndMSK ppandmsk = new PPAndMSK();
+                ppandmsk.setMsk(msk);
+                ppandmsk.setPp(pp);
+                return ppandmsk;
             }
         } catch (SQLException | IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
             JDBCUtils.close(resultSet, ps, connection);
         }
-//        PreparedStatement ps = connection.prepareStatement("insert into pp (PP) value(?)");
-//        PreparedStatement ps_1 = connection.prepareStatement("insert into msk (MSK) value(?)");
-//
-//        ps.setBytes(1, bos.toByteArray());
-//        ps.executeUpdate();
-//        ps_1.setBytes(1, bos_1.toByteArray());
-//        ps_1.executeUpdate();
-
-
         return null;
     }
 
     @Override
-    public MSK getMsk() {
+    public void setPKAndSK(String id,PKAndSKAndID pkandsk) {
+        Connection connection = null;
+        PreparedStatement ps = null;
+        PK pk = pkandsk.getPk();
+        SK sk = pkandsk.getSk();
+        String theta = pkandsk.getTheta_id();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
+        ObjectOutputStream oos = null;
+        ObjectOutputStream oos_1 = null;
+        try {
+            oos = new ObjectOutputStream(bos);
+            oos.writeObject(pk);
+            oos_1 = new ObjectOutputStream(bos_1);
+            oos_1.writeObject(sk);
+            connection = JDBCUtils.getConnection();
+            ps = connection.prepareStatement("insert into user_basic (id,pk,sk,theta) value(?,?,?,?)");
+            ps.setString(1,id);
+            ps.setBytes(2, bos.toByteArray());
+            ps.setBytes(3,bos_1.toByteArray());
+            ps.setString(4,theta);
+            ps.executeUpdate();
+
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
+        }finally {
+            JDBCUtils.close(ps, connection);
+        }
+    }
+
+    @Override
+    public PKAndSKAndID getPKAndSKAndID(String id) {
         Connection connection = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
         try {
             connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("select id,msk from msk");
+            ps = connection.prepareStatement("select pk,sk,theta from user_basic where id = ?");
+            ps.setString(1,id);
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
-                System.out.println(resultSet.getInt(1));
-                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(2));
+                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(1));
                 ObjectInputStream ois = new ObjectInputStream(bis);
-                MSK msk = (MSK) ois.readObject();
+                PK pk = (PK) ois.readObject();
+                bis = new ByteArrayInputStream(resultSet.getBytes(2));
+                ois = new ObjectInputStream(bis);
+                SK sk = (SK) ois.readObject();
 
-                return msk;
+                String theta = resultSet.getString(3);
+
+                PKAndSKAndID pkandsk = new PKAndSKAndID();
+                pkandsk.setPk(pk);
+                pkandsk.setSk(sk);
+                pkandsk.setTheta_id(theta);
+                return pkandsk;
             }
         } catch (SQLException | IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -111,6 +160,24 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
     }
 
     @Override
+    public void addS(String user_id,Element s) {
+        Connection connection = null;
+        PreparedStatement ps = null;
+        try {
+            connection = JDBCUtils.getConnection();
+            ps = connection.prepareStatement("insert into user_s (user_id,s) value(?,?)");
+            ps.setString(1,user_id);
+            byte[] d = s.toBytes();
+            ps.setBytes(2, d);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }finally {
+            JDBCUtils.close(ps, connection);
+        }
+    }
+
+    @Override
     public byte[] getDid(String theta){
         Connection connection = null;
         PreparedStatement ps = null;
@@ -125,13 +192,6 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
             while(resultSet.next()){
                 byte[] bytes = resultSet.getBytes(1);
                 return bytes;
-//            System.out.println(bytes);
-//                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(2));
-//                ObjectInputStream ois = new ObjectInputStream(bis);
-//                People pn = (People) ois.readObject();
-//                System.out.println(pn.getName());
-//                System.out.println(pn.getAge());
-//                System.out.println(pn.getBirthday());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -205,8 +265,8 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
     }
 
 
-    @Test
-    public void test() throws Exception {
+
+//    public void test() throws Exception {
 
 
 
@@ -242,6 +302,6 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
 ////关闭连接
 //            JDBCUtils.close(resultSet,ps, connection);
 
-        }
+//        }
 
 }

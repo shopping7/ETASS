@@ -1,16 +1,11 @@
 package cn.shopping.ETASS.dao.impl;
 
-
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
 import it.unisa.dia.gas.jpbc.Element;
 
-import java.util.HashMap;
-
-
-public class AlgorithmServiceImplTest {
-    public static void main(String[] args) throws Exception {
-
+public class AlgoGetFileTest {
+    public static void main(String[] args) {
         AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
         algorithmService.setup();
 
@@ -47,16 +42,13 @@ public class AlgorithmServiceImplTest {
         };
 
         String id = "123";
-        algorithmService.KeyGen(id,attributes);
+
         PKAndSKAndID pkAndsk = algorithmService.getPKAndSKAndID(id);
         PK pk = pkAndsk.getPk();
         SK sk = pkAndsk.getSk();
         String theta_id = pkAndsk.getTheta_id();
-
-        algorithmService.CreateUL(id,pk);
         Element Did = algorithmService.getDid(theta_id);
-        String[] KW = {"doctor","oncology department","Raffles hospital"};
-        algorithmService.Enc("crypto", KW, lsss);
+
         CTAndVKM ctandvkm = algorithmService.getCtAndVkm();
         if(ctandvkm != null){
             CT ct = ctandvkm.getCt();
@@ -79,13 +71,5 @@ public class AlgorithmServiceImplTest {
             }
 
         }
-        else {
-            System.out.println("Enc fail");
-        }
-
-
-
-
     }
-
 }
