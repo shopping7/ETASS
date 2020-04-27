@@ -3,7 +3,9 @@ package cn.shopping.ETASS.web.servlet;
 import cn.shopping.ETASS.domain.ResultInfo;
 import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.service.GetFile;
+import cn.shopping.ETASS.service.UploadFile;
 import cn.shopping.ETASS.service.impl.GetFileImpl;
+import cn.shopping.ETASS.service.impl.UploadFileImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.servlet.ServletException;
@@ -21,23 +23,19 @@ public class UploadFileServlet extends HttpServlet {
         String kw_1 = request.getParameter("kw_1");
         String kw_2 = request.getParameter("kw_2");
         String kw_3 = request.getParameter("kw_3");
-        String[] kw_trapdoor = new String[]{kw_1,kw_2,kw_3};
-//        String[] kw_trapdoor = {"oncology department","Raffles hospital","doctor"};
+        String[] kw = new String[]{kw_1,kw_2,kw_3};
+//        String[] kw = {"oncology department","Raffles hospital","doctor"};
+//        String msg = "hello";
+        String msg = request.getParameter("msg");
         HttpSession session = request.getSession();
         User user = (User)session.getAttribute("user");
         String user_id = user.getUser_id();
         System.out.println(user_id);
         ResultInfo info = new ResultInfo();
-        GetFile gf = new GetFileImpl();
-        String str = gf.getFile(user_id, kw_trapdoor);
-        System.out.println(str);
-        if(str != null){
-            info.setFlag(true);
-            info.setErrorMsg(str);
-        }else{
-            info.setFlag(false);
-            info.setErrorMsg("未找到符合的信息");
-        }
+        UploadFile uf = new UploadFileImpl();
+        uf.uploadFile(user_id,msg,kw);
+
+        info.setErrorMsg("上传成功");
         //将info对象序列化为json
         ObjectMapper mapper = new ObjectMapper();
 

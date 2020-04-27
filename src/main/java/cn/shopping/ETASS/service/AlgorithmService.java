@@ -9,7 +9,7 @@ public interface AlgorithmService {
     PKAndSKAndID getPKAndSKAndID(String id);
     void CreateUL(String id, PK pk);
     Element getDid(String theta);
-    void Enc(String user_id,String msg, String[] KW, double[][] lsss);
+    void Enc(String user_id,String msg, String[] KW, double[][] lsss,String[] attributes);
     TKW Trapdoor(SK sk, String[] kw_1);
     CTAndVKM getCtAndVkm();
     CTout Transform(CT ct, TKW tkw, Element Did, double[][] lsssD1, int lsssIndex[]);

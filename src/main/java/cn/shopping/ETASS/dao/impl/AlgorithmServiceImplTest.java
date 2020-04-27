@@ -56,7 +56,7 @@ public class AlgorithmServiceImplTest {
         algorithmService.CreateUL(id,pk);
         Element Did = algorithmService.getDid(theta_id);
         String[] KW = {"doctor","oncology department","Raffles hospital"};
-        algorithmService.Enc("crypto", KW, lsss);
+        algorithmService.Enc(id,"crypto", KW, lsss,attributes);
         CTAndVKM ctandvkm = algorithmService.getCtAndVkm();
         if(ctandvkm != null){
             CT ct = ctandvkm.getCt();

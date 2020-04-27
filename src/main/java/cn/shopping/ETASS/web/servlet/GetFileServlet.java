@@ -27,7 +27,8 @@ public class GetFileServlet extends HttpServlet {
 //        String[] kw_trapdoor = {"oncology department","Raffles hospital","doctor"};
         HttpSession session = request.getSession();
         User user = (User)session.getAttribute("user");
-        String user_id = user.getUser_id();
+//        String user_id = user.getUser_id();
+        String user_id = "123";
         System.out.println(user_id);
         ResultInfo info = new ResultInfo();
         GetFile gf = new GetFileImpl();

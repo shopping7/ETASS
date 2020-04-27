@@ -44,7 +44,6 @@ public class AlgoGetFileTest {
         String id = "123";
 
         PKAndSKAndID pkAndsk = algorithmService.getPKAndSKAndID(id);
-        PK pk = pkAndsk.getPk();
         SK sk = pkAndsk.getSk();
         String theta_id = pkAndsk.getTheta_id();
         Element Did = algorithmService.getDid(theta_id);

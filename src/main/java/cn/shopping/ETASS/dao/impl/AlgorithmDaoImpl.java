@@ -178,6 +178,33 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
     }
 
     @Override
+    public byte[] getS(String user_id) {
+        Connection connection = null;
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
+        try {
+            connection = JDBCUtils.getConnection();
+            ps = connection.prepareStatement("select s from user_s where user_id = ?");
+            ps.setString(1,user_id);
+            resultSet = ps.executeQuery();
+
+
+            while(resultSet.next()){
+                byte[] bytes = resultSet.getBytes(1);
+                return bytes;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }finally {
+            JDBCUtils.close(resultSet,ps, connection);
+        }
+
+//关闭连接
+
+        return null;
+    }
+
+    @Override
     public byte[] getDid(String theta){
         Connection connection = null;
         PreparedStatement ps = null;

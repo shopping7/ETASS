@@ -7,6 +7,17 @@ import it.unisa.dia.gas.jpbc.Element;
 public class AlgoUploadFileTest {
     public static void main(String[] args) {
         AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
+        String[] attributes = new String[]{
+                "H1",
+                "P1",
+                "D1",
+                "D2",
+                "H2",
+                "P2",
+                "D3",
+                "P3",
+                "D4"
+        };
         double[][] lsss = new double[][]{
                 {1, 1, 0, 0}, // H1
                 {0,-1, 1, 0}, // P1
@@ -18,9 +29,9 @@ public class AlgoUploadFileTest {
                 {0, 0,-1, 1}, // P3
                 {0, 0, 0,-1}  // D4
         };
+        String[] kw = {"oncology department","Raffles hospital","doctor"};
         algorithmService.setup();
-        String[] KW = {"123","456","789"};
-        algorithmService.Enc("crypto", KW, lsss);
+        algorithmService.Enc("123","crypto", kw, lsss,attributes);
 
 
 

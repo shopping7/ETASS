@@ -27,8 +27,11 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     private Pairing pairing;
     private Field G1, GT, Zr, K;
     private Element a, b, g, Y, k1, k2,lambda, f;
-    private Element s, u, pi[],kappa;
+    private Element u,kappa;
     private Element L,V;
+//    private Element s,, pi[];
+//    private Element pi[];
+
 
     public AlgorithmServiceImpl() {
     }
@@ -76,7 +79,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
 //        PPAndMSK ppandmsk_1 = new PPAndMSK();
 //        ppandmsk_1.setMsk(msk_1);
 //        ppandmsk_1.setPp(pp_1);
-
+//
 //        dao.setup(ppandmsk_1);
 
         pairing = PairingFactory.getPairing("a.properties");
@@ -137,7 +140,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         D2 = g.powZn(t).getImmutable();
         D2_1 = g.powZn(lambda.mulZn(t)).getImmutable();
         D3 = new Element[attributes.length];
-        pi = new Element[attributes.length];
+        Element[] pi = new Element[attributes.length];
         byte[][] D3_byte = new byte[attributes.length][];
         for (int i = 0; i < attributes.length; i++) {
             String md5 = DigestUtils.md5DigestAsHex(attributes[i].getBytes());
@@ -166,7 +169,6 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         pkandsk.setTheta_id(encoded);
 
         dao.setPKAndSK(id,pkandsk);
-
     }
 
     @Override
@@ -185,7 +187,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     public void CreateUL(String id, PK pk) {
         Element Did;
         Element Yid = GT.newElementFromBytes(pk.getYid());
-        s = Zr.newRandomElement().getImmutable();
+        Element s = Zr.newRandomElement().getImmutable();
         dao.addS(id,s);
         Did = Yid.powZn(s);
         byte[] theta_id = Crytpto.SEnc(id.getBytes(), k1.toBytes());
@@ -211,14 +213,14 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     }
 
 
-    public void Enc(String user_id,String msg, String[] KW, double[][] lsss) {
+    public void Enc(String user_id,String msg, String[] KW, double[][] lsss,String[] attributes) {
 
         l1 = KW.length;
         Element y2, y3, y4;
         y2 = Zr.newRandomElement().getImmutable();
         y3 = Zr.newRandomElement().getImmutable();
         y4 = Zr.newRandomElement().getImmutable();
-        Element s = Zr.newElementFromBytes(dao.getS(user_id));
+        Element s = Zr.newElementFromBytes(dao.getS(user_id)).getImmutable();
         Element[] lambda_i = new Element[lsss.length];
         for (int i = 0; i < lsss.length; i++) {
             lambda_i[i] = s.mul((int) lsss[i][0]).add(y2.mul((int) lsss[i][1])).add(y3.mul((int) lsss[i][2])).add(y4.mul((int) lsss[i][3])).getImmutable();
@@ -263,6 +265,13 @@ public class AlgorithmServiceImpl implements AlgorithmService {
 
         Element[] Ci = new Element[lsss.length];
         byte[][] Ci_bytes = new byte[lsss.length][];
+
+        //pi后续再处理一下
+        Element[] pi = new Element[attributes.length];
+        for (int i = 0; i < attributes.length; i++) {
+            String md5 = DigestUtils.md5DigestAsHex(attributes[i].getBytes());
+            pi[i] = G1.newElementFromHash(md5.getBytes(), 0, md5.length()).getImmutable();
+        }
         for (int i = 0; i < lsss.length; i++) {
             Ci[i] = (g.powZn(lambda_i[i].mulZn(b))).mul(pi[i].powZn(sigma1.negate())).getImmutable();
             Ci_bytes[i] = Ci[i].toBytes();
@@ -465,8 +474,11 @@ public class AlgorithmServiceImpl implements AlgorithmService {
             ctout.setV(V);
             ctout.setCM(CM);
             return ctout;
+        }else{
+            System.out.println("Test失败");
+            return null;
         }
-        return null;
+
     }
 
 
