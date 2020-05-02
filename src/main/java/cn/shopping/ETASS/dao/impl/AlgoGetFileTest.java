@@ -1,74 +1,59 @@
 package cn.shopping.ETASS.dao.impl;
 
+import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
+import cn.shopping.ETASS.service.CloudServer;
 import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
+import cn.shopping.ETASS.service.impl.CloudServerImpl;
 import it.unisa.dia.gas.jpbc.Element;
+
+import java.util.List;
 
 public class AlgoGetFileTest {
     public static void main(String[] args) {
+
+
+        // 1 用户端获得用户的公钥和私钥
+        String id = "123";
         AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
         algorithmService.setup();
-
-//        策略 a and (b or c) and (d or (e and f))
-        String[] attributes = new String[]{
-                "H1",
-                "P1",
-                "D1",
-                "D2",
-                "H2",
-                "P2",
-                "D3",
-                "P3",
-                "D4"
-        };
-
-        double[][] lsss = new double[][]{
-                {1, 1, 0, 0}, // H1
-                {0,-1, 1, 0}, // P1
-                {0, 0,-1, 0}, // D1
-                {0, 0,-1, 0}, // D2
-                {1, 1, 0, 0}, // H2
-                {0,-1, 1, 1}, // P2
-                {0, 0, 0,-1}, // D3
-                {0, 0,-1, 1}, // P3
-                {0, 0, 0,-1}  // D4
-        };
-
-        double[][] lsssD1 = new double[][]{
-                {1, 1, 0, 0}, // H1
-                {0,-1, 1, 0}, // P1
-                {0, 0,-1, 0}, // D1
-                {0, 0, 0,-1}  // D4
-        };
-
-        String id = "123";
-
         PKAndSKAndID pkAndsk = algorithmService.getPKAndSKAndID(id);
         SK sk = pkAndsk.getSk();
         String theta_id = pkAndsk.getTheta_id();
         Element Did = algorithmService.getDid(theta_id);
+        String[] KW1 = {"school"};
+        TKW tkw = algorithmService.Trapdoor(sk,KW1);
 
-        CTAndVKM ctandvkm = algorithmService.getCtAndVkm();
-        if(ctandvkm != null){
-            CT ct = ctandvkm.getCt();
-            VKM vkm = ctandvkm.getVkm();
-            String[] KW1 = {"oncology department","Raffles hospital","doctor"};
-            TKW tkw = algorithmService.Trapdoor(sk,KW1);
-            int lsssIndex[] = new int [] {0,1,2,8};
-            CTout ctout = algorithmService.Transform(ct, tkw, Did,lsssD1,lsssIndex);
+//      1 CS获得文件属性和用户属性
+        String[] attrs = {"hospital","doctor","flu","headache"};
+        //2 cloudserver寻找对应的文件
+        CloudServer CS = new CloudServerImpl();
+        CS.setup();
+        List<Encrypt_File> file_list = CS.getFile(KW1);
+        if(file_list != null){
+            for (Encrypt_File file : file_list) {
+                CT ct = file.getCt();
+                VKM vkm = file.getVkm();
+                LSSSMatrix lsss = file.getLsss();
+                System.out.println(lsss);
 
-            if(ctout != null){
-                byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
-                String str = new String(bytes);
-                System.out.println(str);
+                LSSSMatrix lsssD1 = lsss.extract(attrs);
+                int lsssIndex[] = lsssD1.getIndex();
+                CTout ctout = CS.Transform(ct, tkw, Did,lsssD1,lsssIndex);
+                if(ctout != null){
+                    byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
+                    String str = new String(bytes);
+                    System.out.println(str);
 
-                //追溯id
-//                String id_revocation = algorithmService.Trance(sk);
-//                System.out.println(id_revocation);
-            }else{
-                System.out.println("Dec fail");
+                }else{
+                    System.out.println("Dec fail");
+
+                }
             }
 
+
+        }else{
+            System.out.println("无匹配文件");
         }
     }
 }

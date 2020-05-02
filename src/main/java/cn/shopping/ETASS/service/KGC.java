@@ -4,5 +4,7 @@ import cn.shopping.ETASS.domain.pv.PPAndMSK;
 
 public interface KGC {
 
-    PPAndMSK setup();
+     void setup();
+
+     void KeyGen(String id, String[] attributes);
 }

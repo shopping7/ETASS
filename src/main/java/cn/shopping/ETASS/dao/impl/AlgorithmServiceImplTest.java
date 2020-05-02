@@ -1,53 +1,41 @@
 package cn.shopping.ETASS.dao.impl;
 
 
+import cn.shopping.ETASS.domain.lsss.LSSSEngine;
+import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
+import cn.shopping.ETASS.service.CloudServer;
+import cn.shopping.ETASS.service.KGC;
 import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
+import cn.shopping.ETASS.service.impl.CloudServerImpl;
+import cn.shopping.ETASS.service.impl.KGCImpl;
 import it.unisa.dia.gas.jpbc.Element;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class AlgorithmServiceImplTest {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args){
+        LSSSEngine engine = new LSSSEngine();
+        String policy = "hospital&(doctor|director)&(heart|(flu&headache))";
+        String[] attributes = {"hospital","doctor","director","heart","flu","headache"};
+        String[] attrs = {"hospital","doctor","heart"};
+        LSSSMatrix lsss = engine.genMatrix(policy);
+        System.out.println(lsss.toString());
+        LSSSMatrix lsssD1 = lsss.extract(attrs);
+        System.out.println(lsssD1);
 
+        KGC kgc = new KGCImpl();
+        //1 KGC分配pp和msk
+        kgc.setup();
+        //
         AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
         algorithmService.setup();
-
-//        策略 a and (b or c) and (d or (e and f))
-        String[] attributes = new String[]{
-                "H1",
-                "P1",
-                "D1",
-                "D2",
-                "H2",
-                "P2",
-                "D3",
-                "P3",
-                "D4"
-        };
-
-        double[][] lsss = new double[][]{
-                {1, 1, 0, 0}, // H1
-                {0,-1, 1, 0}, // P1
-                {0, 0,-1, 0}, // D1
-                {0, 0,-1, 0}, // D2
-                {1, 1, 0, 0}, // H2
-                {0,-1, 1, 1}, // P2
-                {0, 0, 0,-1}, // D3
-                {0, 0,-1, 1}, // P3
-                {0, 0, 0,-1}  // D4
-        };
-
-        double[][] lsssD1 = new double[][]{
-                {1, 1, 0, 0}, // H1
-                {0,-1, 1, 0}, // P1
-                {0, 0,-1, 0}, // D1
-                {0, 0, 0,-1}  // D4
-        };
-
         String id = "123";
-        algorithmService.KeyGen(id,attributes);
+        //生成pk和sk
+        kgc.KeyGen(id,attributes);
+        //获得pk和sk
         PKAndSKAndID pkAndsk = algorithmService.getPKAndSKAndID(id);
         PK pk = pkAndsk.getPk();
         SK sk = pkAndsk.getSk();
@@ -57,32 +45,35 @@ public class AlgorithmServiceImplTest {
         Element Did = algorithmService.getDid(theta_id);
         String[] KW = {"doctor","oncology department","Raffles hospital"};
         algorithmService.Enc(id,"crypto", KW, lsss,attributes);
-        CTAndVKM ctandvkm = algorithmService.getCtAndVkm();
-        if(ctandvkm != null){
-            CT ct = ctandvkm.getCt();
-            VKM vkm = ctandvkm.getVkm();
-            String[] KW1 = {"oncology department","Raffles hospital","doctor"};
-            TKW tkw = algorithmService.Trapdoor(sk,KW1);
-            int lsssIndex[] = new int [] {0,1,2,8};
-            CTout ctout = algorithmService.Transform(ct, tkw, Did,lsssD1,lsssIndex);
+        String[] KW1 = {"oncology department","Raffles hospital","doctor"};
+        List<Encrypt_File> file_list = new ArrayList<>();
 
-            if(ctout != null){
-                byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
-                String str = new String(bytes);
-                System.out.println(str);
+        CloudServer CS = new CloudServerImpl();
+        file_list = CS.getFile(KW1);
+        if(file_list != null){
+            for (Encrypt_File file : file_list) {
+                CT ct = file.getCt();
+                VKM vkm = file.getVkm();
+                TKW tkw = algorithmService.Trapdoor(sk,KW1);
+                //这里要完善
+                int lsssIndex[] = lsssD1.getIndex();
+                CTout ctout = CS.Transform(ct, tkw, Did,lsssD1,lsssIndex);
 
-                //追溯id
-//                String id_revocation = algorithmService.Trance(sk);
-//                System.out.println(id_revocation);
-            }else{
-                System.out.println("Dec fail");
+                if(ctout != null){
+                    byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
+                    String str = new String(bytes);
+                    System.out.println(str);
+
+                }else{
+                    System.out.println("Dec fail");
+
+                }
             }
 
-        }
-        else {
-            System.out.println("Enc fail");
-        }
 
+        }else{
+            System.out.println("无匹配文件");
+        }
 
 
 

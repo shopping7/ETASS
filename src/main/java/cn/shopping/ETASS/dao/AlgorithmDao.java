@@ -1,19 +1,15 @@
 package cn.shopping.ETASS.dao;
 
+import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import it.unisa.dia.gas.jpbc.Element;
 
-import java.io.IOException;
-import java.sql.SQLException;
+import java.util.List;
 
 
 public interface AlgorithmDao {
 
-    void setup(PPAndMSK ppandmsk);
-
     PPAndMSK getPpAndMsk();
-
-    void setPKAndSK(String id, PKAndSKAndID pkandsk);
 
     PKAndSKAndID getPKAndSKAndID(String id);
 
@@ -25,8 +21,10 @@ public interface AlgorithmDao {
 
     byte[] getDid(String theta);
 
-    void upload(CTAndVKM ctandvkm);
+//    void upload(CTAndVKM ctandvkm);
 
-    CTAndVKM getCtAndVkm();
+    void uploadFile(CT ct, VKM vkm, String[] kw_s, LSSSMatrix lsss);
+
+
 
 }

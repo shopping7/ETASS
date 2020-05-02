@@ -1,48 +1,20 @@
 package cn.shopping.ETASS.dao.impl;
 
 import cn.shopping.ETASS.dao.AlgorithmDao;
+import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.util.JDBCUtils;
 import it.unisa.dia.gas.jpbc.Element;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AlgorithmDaoImpl implements AlgorithmDao {
-
-//    private JdbcTemplate template = new JdbcTemplate(JDBCUtils_1.getDataSource());
-
-    @Override
-    public void setup(PPAndMSK ppandmsk) {
-        Connection connection = null;
-        PreparedStatement ps = null;
-        PP pp = ppandmsk.getPp();
-        MSK msk = ppandmsk.getMsk();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
-        ObjectOutputStream oos = null;
-        ObjectOutputStream oos_1 = null;
-        try {
-            oos = new ObjectOutputStream(bos);
-            oos.writeObject(pp);
-            oos_1 = new ObjectOutputStream(bos_1);
-            oos_1.writeObject(msk);
-            connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("insert into setup (pp,msk) value(?,?)");
-            ps.setBytes(1, bos.toByteArray());
-            ps.setBytes(2,bos_1.toByteArray());
-            ps.executeUpdate();
-
-        } catch (IOException | SQLException e) {
-            e.printStackTrace();
-        }finally {
-            JDBCUtils.close(ps, connection);
-        }
-    }
 
     @Override
     public PPAndMSK getPpAndMsk() {
@@ -74,36 +46,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
         return null;
     }
 
-    @Override
-    public void setPKAndSK(String id,PKAndSKAndID pkandsk) {
-        Connection connection = null;
-        PreparedStatement ps = null;
-        PK pk = pkandsk.getPk();
-        SK sk = pkandsk.getSk();
-        String theta = pkandsk.getTheta_id();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
-        ObjectOutputStream oos = null;
-        ObjectOutputStream oos_1 = null;
-        try {
-            oos = new ObjectOutputStream(bos);
-            oos.writeObject(pk);
-            oos_1 = new ObjectOutputStream(bos_1);
-            oos_1.writeObject(sk);
-            connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("insert into user_basic (id,pk,sk,theta) value(?,?,?,?)");
-            ps.setString(1,id);
-            ps.setBytes(2, bos.toByteArray());
-            ps.setBytes(3,bos_1.toByteArray());
-            ps.setString(4,theta);
-            ps.executeUpdate();
 
-        } catch (IOException | SQLException e) {
-            e.printStackTrace();
-        }finally {
-            JDBCUtils.close(ps, connection);
-        }
-    }
 
     @Override
     public PKAndSKAndID getPKAndSKAndID(String id) {
@@ -112,7 +55,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
         ResultSet resultSet = null;
         try {
             connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("select pk,sk,theta from user_basic where id = ?");
+            ps = connection.prepareStatement("select pk,sk,theta from user_basic where user_id = ?");
             ps.setString(1,id);
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
@@ -231,25 +174,30 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
         return null;
     }
 
-    @Override
-    public void upload(CTAndVKM ctandvkm) {
+    //测试上传lsss
+    public void uploadFile(CT ct, VKM vkm, String[] kw_s, LSSSMatrix lsss) {
         Connection connection = null;
         PreparedStatement ps = null;
-        CT ct = ctandvkm.getCt();
-        VKM vkm = ctandvkm.getVkm();
+        String kw = kw_s[0];
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
+        ByteArrayOutputStream bos_2 = new ByteArrayOutputStream();
         ObjectOutputStream oos = null;
         ObjectOutputStream oos_1 = null;
+        ObjectOutputStream oos_2 = null;
         try {
             oos = new ObjectOutputStream(bos);
             oos.writeObject(ct);
             oos_1 = new ObjectOutputStream(bos_1);
             oos_1.writeObject(vkm);
+            oos_2 = new ObjectOutputStream(bos_2);
+            oos_2.writeObject(lsss);
             connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("insert into file (ct,vkm) value(?,?)");
-            ps.setBytes(1, bos.toByteArray());
-            ps.setBytes(2,bos_1.toByteArray());
+            ps = connection.prepareStatement("insert into file (kw,ct,vkm,lsss) value(?,?,?,?)");
+            ps.setString(1, kw);
+            ps.setBytes(2, bos.toByteArray());
+            ps.setBytes(3,bos_1.toByteArray());
+            ps.setBytes(4,bos_2.toByteArray());
             ps.executeUpdate();
 
         } catch (IOException | SQLException e) {
@@ -260,36 +208,39 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
 
     }
 
-    @Override
-    public CTAndVKM getCtAndVkm() {
-        Connection connection = null;
-        PreparedStatement ps = null;
-        ResultSet resultSet = null;
-        try {
-            connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("select ct,vkm from file");
-            resultSet = ps.executeQuery();
-            while (resultSet.next()) {
-                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(1));
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                CT ct = (CT) ois.readObject();
-                bis = new ByteArrayInputStream(resultSet.getBytes(2));
-                ois = new ObjectInputStream(bis);
-                VKM vkm = (VKM) ois.readObject();
+//    @Override
+//    public void upload(CTAndVKM ctandvkm) {
+//        Connection connection = null;
+//        PreparedStatement ps = null;
+//        CT ct = ctandvkm.getCt();
+//        VKM vkm = ctandvkm.getVkm();
+//        String[] kw_s = ctandvkm.getKW();
+//        String kw = kw_s[0];
+//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
+//        ObjectOutputStream oos = null;
+//        ObjectOutputStream oos_1 = null;
+//        try {
+//            oos = new ObjectOutputStream(bos);
+//            oos.writeObject(ct);
+//            oos_1 = new ObjectOutputStream(bos_1);
+//            oos_1.writeObject(vkm);
+//            connection = JDBCUtils.getConnection();
+//            ps = connection.prepareStatement("insert into file (kw,ct,vkm) value(?,?,?)");
+//            ps.setString(1, kw);
+//            ps.setBytes(2, bos.toByteArray());
+//            ps.setBytes(3,bos_1.toByteArray());
+//            ps.executeUpdate();
+//
+//        } catch (IOException | SQLException e) {
+//            e.printStackTrace();
+//        }finally {
+//            JDBCUtils.close(ps, connection);
+//        }
+//
+//    }
 
-                CTAndVKM ctandvkm = new CTAndVKM();
-                ctandvkm.setCt(ct);
-                ctandvkm.setVkm(vkm);
-                return ctandvkm;
-            }
-        } catch (SQLException | IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            JDBCUtils.close(resultSet, ps, connection);
-        }
 
-        return null;
-    }
 
 
 

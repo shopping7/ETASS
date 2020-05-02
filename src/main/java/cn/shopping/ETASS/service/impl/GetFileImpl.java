@@ -1,19 +1,24 @@
 package cn.shopping.ETASS.service.impl;
 
+import cn.shopping.ETASS.domain.lsss.LSSSEngine;
+import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.AlgorithmService;
+import cn.shopping.ETASS.service.CloudServer;
 import cn.shopping.ETASS.service.GetFile;
-import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
 import it.unisa.dia.gas.jpbc.Element;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GetFileImpl implements GetFile {
         private AlgorithmService algorithmService = new AlgorithmServiceImpl();
-        private double[][] lsssD1 = new double[][]{
-                {1, 1, 0, 0}, // H1
-                {0,-1, 1, 0}, // P1
-                {0, 0,-1, 0}, // D1
-                {0, 0, 0,-1}  // D4
-        };
+        LSSSEngine engine = new LSSSEngine();
+        String policy = "hospital&(doctor|director)&(heart|(flu&headache))";
+        String[] attributes = {"hospital","doctor","director","heart","flu","headache"};
+        String[] attrs = {"hospital","doctor","heart"};
+        LSSSMatrix lsss = engine.genMatrix(policy);
+        LSSSMatrix lsssD1 = lsss.extract(attrs);
 
         @Override
         public String getFile(String id, String[] kw_trapdoor) {
@@ -23,25 +28,34 @@ public class GetFileImpl implements GetFile {
             String theta_id = pkAndsk.getTheta_id();
             Element Did = algorithmService.getDid(theta_id);
 
-            CTAndVKM ctandvkm = algorithmService.getCtAndVkm();
-            if(ctandvkm != null){
-                CT ct = ctandvkm.getCt();
-                VKM vkm = ctandvkm.getVkm();
-                TKW tkw = algorithmService.Trapdoor(sk,kw_trapdoor);
-                int lsssIndex[] = new int [] {0,1,2,8};
-                CTout ctout = algorithmService.Transform(ct, tkw, Did,lsssD1,lsssIndex);
+            //获得文件
+            CloudServer CS = new CloudServerImpl();
+            List<Encrypt_File> file_list = new ArrayList<>();
+            file_list = CS.getFile(kw_trapdoor);
+            if(file_list != null){
+                for (Encrypt_File file : file_list) {
+                    CT ct = file.getCt();
+                    VKM vkm = file.getVkm();
+                    TKW tkw = algorithmService.Trapdoor(sk,kw_trapdoor);
+                    //这里要完善
+                    int lsssIndex[] = lsssD1.getIndex();
+                    CTout ctout = CS.Transform(ct, tkw, Did,lsssD1,lsssIndex);
 
-                if(ctout != null){
-                    byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
-                    String str = new String(bytes);
-                    System.out.println(str);
+                    if(ctout != null){
+                        byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
+                        String str = new String(bytes);
+                        System.out.println(str);
 
-                    return str;
-                }else{
-                    System.out.println("Dec fail");
+                        return str;
+                    }else{
+                        System.out.println("Dec fail");
 
+                    }
                 }
 
+
+            }else{
+                System.out.println("无匹配文件");
             }
             return null;
         }
