@@ -2,27 +2,31 @@ package cn.shopping.ETASS.service.impl;
 
 
 import cn.shopping.ETASS.dao.AlgorithmDao;
+import cn.shopping.ETASS.dao.CommonDao;
 import cn.shopping.ETASS.dao.impl.AlgorithmDaoImpl;
+import cn.shopping.ETASS.dao.impl.CommonDaoImpl;
+import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.lsss.LSSSShares;
 import cn.shopping.ETASS.domain.lsss.Vector;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.AlgorithmService;
-import cn.shopping.ETASS.service.KGC;
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Field;
 import it.unisa.dia.gas.jpbc.Pairing;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.springframework.util.DigestUtils;
+
+import java.io.File;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 
 
 public class AlgorithmServiceImpl implements AlgorithmService {
 
     private AlgorithmDao dao = new AlgorithmDaoImpl();
+    private CommonDao commonDao = new CommonDaoImpl();
+
     private int l1;
     private Pairing pairing;
     public static Field G1, GT, Zr, K;
@@ -94,7 +98,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         G1 = pairing.getG1();
         GT = pairing.getGT();
 
-        PPAndMSK ppandmsk = dao.getPpAndMsk();
+        PPAndMSK ppandmsk = commonDao.getSetUp();
         PP pp = ppandmsk.getPp();
         MSK msk = ppandmsk.getMsk();
 
@@ -118,19 +122,6 @@ public class AlgorithmServiceImpl implements AlgorithmService {
 
     }
 
-
-
-
-    @Override
-    public PKAndSKAndID getPKAndSKAndID(String id) {
-        PKAndSKAndID pkAndSKAndID = dao.getPKAndSKAndID(id);
-        if(pkAndSKAndID != null){
-            return pkAndSKAndID;
-        }else {
-            return null;
-        }
-
-    }
 
 
 
@@ -163,9 +154,10 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     }
 
 
-    public void Enc(String user_id, String msg, String[] KW, LSSSMatrix lsss, String[] attributes) {
+    public void Enc(String user_id, File file, String[] KW, LSSSMatrix lsss) {
 
         l1 = KW.length;
+        String attributes[] = lsss.getMap();
         Element s = Zr.newElementFromBytes(dao.getS(user_id)).getImmutable();
         Element[] Yn2 = new Element[lsss.getMartix().getCols()];//  get zr secret share matrix
         Yn2[0] = s;
@@ -179,7 +171,13 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         Element gamma = GT.newRandomElement().getImmutable();
         String kse_t = DigestUtils.md5DigestAsHex(gamma.toBytes());
         Element kse = K.newElementFromBytes(kse_t.getBytes()).getImmutable();
-        byte[] CM = Crytpto.SEnc(msg.getBytes(), kse.toBytes());
+//        byte[] CM = Crytpto.SEnc(msg.getBytes(), kse.toBytes());
+        byte[] CM = new byte[0];
+        try {
+            CM = crytptpFile.encrypt(file, kse.toBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         //（3）计算检验密钥
         String vkm_t = gamma.toString() + Base64.getEncoder().encodeToString(CM);
@@ -265,12 +263,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         Element D1_1 = Zr.newElementFromBytes(sk.getD1_1()).getImmutable();
         Element D2 = G1.newElementFromBytes(sk.getD2()).getImmutable();
         Element D2_1 = G1.newElementFromBytes(sk.getD2_1()).getImmutable();
-
-        byte[][] d3 = sk.getD3();
-        Element D3[] = new Element[d3.length];
-        for (int i = 0; i < D3.length; i++) {
-            D3[i] = G1.newElementFromBytes(d3[i]).getImmutable();
-        }
+        D3_Map[] D3 = sk.getD3();
         Element D4 = Zr.newElementFromBytes(sk.getD4()).getImmutable();
         Element xid = Zr.newElementFromBytes(sk.getXid()).getImmutable();
         //  计算TKW
@@ -280,9 +273,14 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         Element T2_1 = D2_1.powZn(u.mulZn(D4)).getImmutable();
         int l2 = kw_1.length;
         Element l2_E = Zr.newElement(l2).getImmutable();
-        Element[] T3 = new Element[D3.length];
+        T3_Map[] T3 = new T3_Map[D3.length];
         for (int i = 0; i < D3.length; i++) {
-            T3[i] = D3[i].powZn((u.mulZn(D4).mulZn(sigma2)).mul(l2_E.invert())).getImmutable();
+            Element D3_t = G1.newElementFromBytes(D3[i].getD3()).getImmutable();
+            Element T3_t1 = D3_t.powZn((u.mulZn(D4).mulZn(sigma2)).mul(l2_E.invert())).getImmutable();
+            T3_Map T3_t = new T3_Map();
+            T3_t.setAttr(D3[i].getAttr());
+            T3_t.setT3(T3_t1);
+            T3[i] = T3_t;
         }
 
         Element T4 = (u.mulZn(D4).sub(xid)).mul(sigma2).mul(l2_E.invert()).getImmutable();
@@ -295,7 +293,7 @@ public class AlgorithmServiceImpl implements AlgorithmService {
             kw_us[i] = Zr.newElementFromHash(kw_u.getBytes(),0,kw_u.length()).getImmutable();
         }
         //这里不明白怎么获得l1
-        l1 = l2;
+        int l1 = l2;
         Element[] T6 = new Element[l1];
         for (int i = 0; i < l1; i++) {
             Element sum = Zr.newZeroElement().getImmutable();
@@ -322,9 +320,9 @@ public class AlgorithmServiceImpl implements AlgorithmService {
 
 
 
-    public byte[] Dec(CTout ctout, SK sk, VKM vkm) {
+    public void Dec(CTout ctout, SK sk, VKM vkm,String filename) {
         if(ctout == null&& u == null){
-            return null;
+            return ;
         }
         Element VKM = G1.newElementFromBytes(vkm.getVKM()).getImmutable();
         Element C = ctout.getC().getImmutable();
@@ -341,11 +339,17 @@ public class AlgorithmServiceImpl implements AlgorithmService {
         if(VKM_verify.equals(VKM)){
             String kse_v = DigestUtils.md5DigestAsHex(gamma_verify.toBytes());
             Element kse_verify = K.newElementFromBytes(kse_v.getBytes()).getImmutable();
-            byte[] m = Crytpto.SDec(CM,kse_verify.toBytes());
-            return m;
+//            byte[] m = Crytpto.SDec(CM,kse_verify.toBytes());
+
+            try {
+                crytptpFile.decrypt(CM, filename,kse_verify.toBytes());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            System.out.println("解密成功");
+
         }else{
-            byte[] fail = "vkmfail".getBytes();
-            return fail;
+            System.out.println("校验不合格");
         }
 
 

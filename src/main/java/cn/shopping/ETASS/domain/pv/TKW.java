@@ -14,7 +14,7 @@ public class TKW {
 
     private Element T2_1;
 
-    private Element[] T3;
+    private T3_Map[] T3;
 
     private Element T4;
 

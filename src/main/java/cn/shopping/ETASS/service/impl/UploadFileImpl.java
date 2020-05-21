@@ -4,18 +4,21 @@ import cn.shopping.ETASS.domain.lsss.LSSSEngine;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.service.UploadFile;
 
+import java.io.File;
+
 public class UploadFileImpl implements UploadFile {
-    AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
-    LSSSEngine engine = new LSSSEngine();
-    String policy = "hospital&(doctor|director)&(heart|(flu&headache))";
-    String[] attributes = {"hospital","doctor","director","heart","flu","headache"};
-    String[] attrs = {"hospital","doctor","heart"};
-    LSSSMatrix lsss = engine.genMatrix(policy);
 
     @Override
-    public void uploadFile(String user_id, String msg, String[] kw){
-        algorithmService.setup();
-        algorithmService.Enc(user_id,msg, kw, lsss,attributes);
-    }
+    public void uploadFile(String user_id, String policy, File file, String[] kw) {
+        LSSSEngine engine = new LSSSEngine();
+        LSSSMatrix lsss = engine.genMatrix(policy);
+        String[] attributes = lsss.getMap();
+//        System.out.println(lsss.toString());
 
+        //3 加密上传
+        AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
+//        String filename = "C:\\Users\\shopping\\Documents\\test\\1.txt";
+        algorithmService.setup();
+        algorithmService.Enc(user_id,file, kw, lsss);
+    }
 }

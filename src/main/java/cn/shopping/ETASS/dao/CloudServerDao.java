@@ -8,5 +8,9 @@ public interface CloudServerDao {
 
     List<Encrypt_File> getFile(String[] KW);
 
+    List<String> getAttr(String id);
+
+    void userRevo(String id);
+
 //    List<CTAndVKM> getCtAndVkm(String[] KW);
 }

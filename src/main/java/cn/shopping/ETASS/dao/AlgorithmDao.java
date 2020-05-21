@@ -9,10 +9,6 @@ import java.util.List;
 
 public interface AlgorithmDao {
 
-    PPAndMSK getPpAndMsk();
-
-    PKAndSKAndID getPKAndSKAndID(String id);
-
     void addUL(String encoded, Element Did);
 
     void addS(String user_id,Element s);
@@ -21,10 +17,6 @@ public interface AlgorithmDao {
 
     byte[] getDid(String theta);
 
-//    void upload(CTAndVKM ctandvkm);
-
     void uploadFile(CT ct, VKM vkm, String[] kw_s, LSSSMatrix lsss);
-
-
 
 }

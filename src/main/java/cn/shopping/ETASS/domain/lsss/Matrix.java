@@ -10,6 +10,9 @@ import java.io.Serializable;
 
 
 public class Matrix implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     public static Matrix ONE;
     static {
         ONE = new Matrix(1, 1);

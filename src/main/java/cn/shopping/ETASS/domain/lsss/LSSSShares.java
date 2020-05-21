@@ -1,8 +1,12 @@
 package cn.shopping.ETASS.domain.lsss;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class LSSSShares {
+public class LSSSShares implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Vector vector;
     private String[] map;
 

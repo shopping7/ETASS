@@ -62,6 +62,12 @@ public class CloudServerImpl implements CloudServer {
         return file_list;
     }
 
+    public String[] getAttr(String id){
+        List<String> list = dao.getAttr(id);
+        String[] attr = (String[]) list.toArray(new String[list.size()]);
+        return attr;
+    }
+
     public boolean Test(CT ct, TKW tkw, LSSSMatrix lsssD1, Element Did,int lsssIndex[]) {
         if(Did == null){
             return false;
@@ -69,12 +75,15 @@ public class CloudServerImpl implements CloudServer {
 
         //计算秘密值sss
         Vector w = lsssD1.getRv();
+        if(w == null){
+            return false;
+        }
 
         Element T1 = tkw.getT1().getImmutable();
         Element T1_1 = tkw.getT1_1().getImmutable();
         Element T2 = tkw.getT2().getImmutable();
         Element T2_1 = tkw.getT2_1().getImmutable();
-        Element[] T3 = tkw.getT3();
+        T3_Map[] T3_t = tkw.getT3();
         Element T4 = tkw.getT4().getImmutable();
         Element T5 = tkw.getT5().getImmutable();
         Element[] T6 = tkw.getT6();
@@ -98,16 +107,30 @@ public class CloudServerImpl implements CloudServer {
 
         L = pairing.pairing(T1,(C0.powZn(T1_1)).mul(C0_1)).getImmutable();
 
-        Element temp1;
+        String[] user_file_attr = lsssD1.getMap();
+        Element temp3 = G1.newOneElement();
+        int k = 0;
+        for (int i = 0; i < T3_t.length; i++) {
+            for (int j = 0; j < user_file_attr.length; j++) {
+                if(T3_t[i].getAttr().equals(user_file_attr[j])){
+                    temp3 = temp3.mul(T3_t[i].getT3().powZn(Zr.newElement(w.getValue(k))).getImmutable());
+                    k++;
+                }
+            }
+
+        }
+        //注意T3的取值
+        Element temp1 =(T2.powZn(T1_1)).mul(T2_1).getImmutable();
         Element temp2 = Ci[lsssIndex[0]].powZn(Zr.newElement(w.getValue(0))).getImmutable();
-        Element temp3 = T3[lsssIndex[0]].powZn(Zr.newElement(w.getValue(0))).getImmutable();
-        Element temp4 = Cj[0].mul(T6[0]).getImmutable();
-        temp1 = (T2.powZn(T1_1)).mul(T2_1).getImmutable();
+//        Element temp3 = T3[0].powZn(Zr.newElement(w.getValue(0))).getImmutable();
+//        Element temp3_t = T3_t[0].getT3().powZn(Zr.newElement(w.getValue(0))).getImmutable();
+        Element temp4 = Cj[0].mul(T6[0]).getImmutable().getImmutable();
+
 
         for (int i = 1; i < lsssD1.getMartix().getRows(); i++) {
             Element t = Zr.newElement(w.getValue(i)).getImmutable();
             temp2 = temp2.mul(Ci[lsssIndex[i]].powZn(t));
-            temp3 = temp3.mul(T3[lsssIndex[i]].powZn(t));
+//            temp3 = temp3.mul(T3[i].powZn(t));
 
         }
 
@@ -118,7 +141,6 @@ public class CloudServerImpl implements CloudServer {
 
         V = pairing.pairing(temp1, temp2).mul((pairing.pairing(C0_11,temp3)).powZn(temp4)).getImmutable();
 
-
         Element temp5 = (E.powZn(T4.mul(temp4))).mul(Did).getImmutable();
 
         Element temp6 = T5.mul(L.sub(V)).getImmutable();
@@ -126,6 +148,7 @@ public class CloudServerImpl implements CloudServer {
         if(temp6.equals(temp5)){
             return true;
         }
+
 
         //是否相等，返回1或0
 
@@ -147,9 +170,14 @@ public class CloudServerImpl implements CloudServer {
             ctout.setCM(CM);
             return ctout;
         }else{
-            System.out.println("Test失败");
+            System.out.println("您的权限不够，无法获得此文件");
             return null;
         }
 
+    }
+
+    @Override
+    public void userRevo(String id) {
+        dao.userRevo(id);
     }
 }

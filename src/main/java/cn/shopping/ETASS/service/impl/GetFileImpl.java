@@ -5,6 +5,7 @@ import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.AlgorithmService;
 import cn.shopping.ETASS.service.CloudServer;
+import cn.shopping.ETASS.service.CommonService;
 import cn.shopping.ETASS.service.GetFile;
 import it.unisa.dia.gas.jpbc.Element;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 public class GetFileImpl implements GetFile {
         private AlgorithmService algorithmService = new AlgorithmServiceImpl();
+        private CommonService commonService = new CommonServiceImpl();
         LSSSEngine engine = new LSSSEngine();
         String policy = "hospital&(doctor|director)&(heart|(flu&headache))";
         String[] attributes = {"hospital","doctor","director","heart","flu","headache"};
@@ -23,7 +25,7 @@ public class GetFileImpl implements GetFile {
         @Override
         public String getFile(String id, String[] kw_trapdoor) {
             algorithmService.setup();
-            PKAndSKAndID pkAndsk = algorithmService.getPKAndSKAndID(id);
+            PKAndSKAndID pkAndsk = commonService.getPKAndSKAndID(id);
             SK sk = pkAndsk.getSk();
             String theta_id = pkAndsk.getTheta_id();
             Element Did = algorithmService.getDid(theta_id);
@@ -42,11 +44,9 @@ public class GetFileImpl implements GetFile {
                     CTout ctout = CS.Transform(ct, tkw, Did,lsssD1,lsssIndex);
 
                     if(ctout != null){
-                        byte[] bytes = algorithmService.Dec(ctout, sk, vkm);
-                        String str = new String(bytes);
-                        System.out.println(str);
+                        String filename = "C:\\Users\\shopping\\Documents\\test\\1.txt";
+                        algorithmService.Dec(ctout, sk, vkm,filename);
 
-                        return str;
                     }else{
                         System.out.println("Dec fail");
 

@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 public class LSSSMatrix implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Matrix matrix;
     private String[] map;
     private int[] index;

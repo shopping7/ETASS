@@ -2,7 +2,12 @@ package cn.shopping.ETASS.domain.lsss;
 
 import it.unisa.dia.gas.jpbc.Element;
 
-public class Vector {
+import java.io.Serializable;
+
+public class Vector implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     // true - row vector; false - col vector
     private boolean flag;
     private int len;

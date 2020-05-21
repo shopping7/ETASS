@@ -15,7 +15,11 @@ public interface CloudServer {
 
     List<Encrypt_File> getFile(String[] KW1);
 
+    public String[] getAttr(String id);
+
     CTout Transform(CT ct, TKW tkw, Element Did, LSSSMatrix lsssD1, int lsssIndex[]);
+
+    void userRevo(String id);
 
     //    boolean KeySanityCheck(SK sk);
 //    String Trance(SK sk);

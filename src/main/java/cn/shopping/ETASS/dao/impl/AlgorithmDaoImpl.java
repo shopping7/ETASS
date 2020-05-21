@@ -11,76 +11,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AlgorithmDaoImpl implements AlgorithmDao {
 
-    @Override
-    public PPAndMSK getPpAndMsk() {
-        Connection connection = null;
-        PreparedStatement ps = null;
-        ResultSet resultSet = null;
-        try {
-            connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("select pp,msk from setup");
-            resultSet = ps.executeQuery();
-            while (resultSet.next()) {
-                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(1));
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                PP pp = (PP) ois.readObject();
-                bis = new ByteArrayInputStream(resultSet.getBytes(2));
-                ois = new ObjectInputStream(bis);
-                MSK msk = (MSK) ois.readObject();
 
-                PPAndMSK ppandmsk = new PPAndMSK();
-                ppandmsk.setMsk(msk);
-                ppandmsk.setPp(pp);
-                return ppandmsk;
-            }
-        } catch (SQLException | IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            JDBCUtils.close(resultSet, ps, connection);
-        }
-        return null;
-    }
-
-
-
-    @Override
-    public PKAndSKAndID getPKAndSKAndID(String id) {
-        Connection connection = null;
-        PreparedStatement ps = null;
-        ResultSet resultSet = null;
-        try {
-            connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("select pk,sk,theta from user_basic where user_id = ?");
-            ps.setString(1,id);
-            resultSet = ps.executeQuery();
-            while (resultSet.next()) {
-                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(1));
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                PK pk = (PK) ois.readObject();
-                bis = new ByteArrayInputStream(resultSet.getBytes(2));
-                ois = new ObjectInputStream(bis);
-                SK sk = (SK) ois.readObject();
-
-                String theta = resultSet.getString(3);
-
-                PKAndSKAndID pkandsk = new PKAndSKAndID();
-                pkandsk.setPk(pk);
-                pkandsk.setSk(sk);
-                pkandsk.setTheta_id(theta);
-                return pkandsk;
-            }
-        } catch (SQLException | IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            JDBCUtils.close(resultSet, ps, connection);
-        }
-        return null;
-    }
 
     @Override
     public void addUL(String encoded, Element Did){
@@ -175,16 +109,16 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
     }
 
     //测试上传lsss
-    public void uploadFile(CT ct, VKM vkm, String[] kw_s, LSSSMatrix lsss) {
+    public void uploadFile(CT ct, VKM vkm, String[] kw, LSSSMatrix lsss) {
         Connection connection = null;
         PreparedStatement ps = null;
-        String kw = kw_s[0];
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
         ByteArrayOutputStream bos_2 = new ByteArrayOutputStream();
         ObjectOutputStream oos = null;
         ObjectOutputStream oos_1 = null;
         ObjectOutputStream oos_2 = null;
+        ResultSet resultSet = null;
         try {
             oos = new ObjectOutputStream(bos);
             oos.writeObject(ct);
@@ -193,12 +127,26 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
             oos_2 = new ObjectOutputStream(bos_2);
             oos_2.writeObject(lsss);
             connection = JDBCUtils.getConnection();
-            ps = connection.prepareStatement("insert into file (kw,ct,vkm,lsss) value(?,?,?,?)");
-            ps.setString(1, kw);
-            ps.setBytes(2, bos.toByteArray());
-            ps.setBytes(3,bos_1.toByteArray());
-            ps.setBytes(4,bos_2.toByteArray());
+            //插入关键字
+            ps = connection.prepareStatement("insert into file (ct,vkm,lsss) value(?,?,?)");
+            ps.setBytes(1, bos.toByteArray());
+            ps.setBytes(2,bos_1.toByteArray());
+            ps.setBytes(3,bos_2.toByteArray());
             ps.executeUpdate();
+            ps = connection.prepareStatement("SELECT LAST_INSERT_ID();");
+            resultSet = ps.executeQuery();
+            int id = 0;
+            while(resultSet.next()){
+                id = resultSet.getInt(1);
+            }
+            ps = connection.prepareStatement("insert into file_kw (file_id,kw) value(?,?)");
+
+            for (int i = 0; i < kw.length; i++) {
+                ps.setInt(1,id);
+                ps.setString(2,kw[i]);
+                ps.executeUpdate();
+            }
+
 
         } catch (IOException | SQLException e) {
             e.printStackTrace();

@@ -18,12 +18,15 @@ public class SK implements Serializable {
 
     private byte[] D2_1;
 
-    private byte[][] D3;
+//    private byte[][] D3;
+    private D3_Map[] D3;
 
     private byte[] D4;
 
     private byte[] xid;
 
     private String zeta;
+
+    private byte[] kappa;
 
 }

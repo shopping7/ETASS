@@ -1,11 +1,17 @@
 package cn.shopping.ETASS.dao;
 
-import cn.shopping.ETASS.domain.pv.PKAndSKAndID;
-import cn.shopping.ETASS.domain.pv.PPAndMSK;
+import cn.shopping.ETASS.domain.KGCUser;
+import cn.shopping.ETASS.domain.User;
+import cn.shopping.ETASS.domain.pv.*;
+
+import java.util.List;
 
 public interface KGCDao {
 
-    void setup(PPAndMSK ppandmsk);
+    KGCUser login(String username, String password);
 
-    void setPKAndSK(String id, PKAndSKAndID pkandsk);
+    void setup(PP pp, MSK msk);
+
+
+    void setPKAndSK(String id, PK pk, SK sk, String theta_id);
 }

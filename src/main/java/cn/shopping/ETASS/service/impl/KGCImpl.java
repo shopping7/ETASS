@@ -1,30 +1,35 @@
 package cn.shopping.ETASS.service.impl;
 
-import cn.shopping.ETASS.dao.AlgorithmDao;
+
+import cn.shopping.ETASS.dao.CommonDao;
 import cn.shopping.ETASS.dao.KGCDao;
-import cn.shopping.ETASS.dao.impl.AlgorithmDaoImpl;
+import cn.shopping.ETASS.dao.impl.CommonDaoImpl;
 import cn.shopping.ETASS.dao.impl.KGCDaoImpl;
+import cn.shopping.ETASS.domain.KGCUser;
+import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.KGC;
-import cn.shopping.ETASS.util.JDBCUtils;
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Field;
 import it.unisa.dia.gas.jpbc.Pairing;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.springframework.util.DigestUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.Base64;
+import java.util.Iterator;
+import java.util.List;
 
 public class KGCImpl implements KGC {
     private KGCDao dao = new KGCDaoImpl();
+    private CommonDao commonDao = new CommonDaoImpl();
     private Pairing pairing;
     private Field G1, GT, Zr, K;
     private Element a, b, g, Y, k1, k2,lambda, f;
+
+    @Override
+    public KGCUser login(KGCUser user) {
+        return dao.login(user.getUsername(),user.getPassword());
+    }
 
     @Override
     public void setup(){
@@ -65,55 +70,55 @@ public class KGCImpl implements KGC {
         pp.setGlambda(g.powZn(lambda).toBytes());
         pp.setY(Y.toBytes());
 
-        PPAndMSK ppandmsk = new PPAndMSK();
-        ppandmsk.setMsk(msk);
-        ppandmsk.setPp(pp);
-
-        dao.setup(ppandmsk);
-
-
-//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//        ObjectOutputStream oos = new ObjectOutputStream(bos);
-//        oos.writeObject(pp);
-//
-//        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
-//        ObjectOutputStream oos_1 = new ObjectOutputStream(bos_1);
-//        oos_1.writeObject(msk);
-//
-//        Connection connection = JDBCUtils.getConnection();
-//        PreparedStatement ps = connection.prepareStatement("insert into pp (PP) value(?)");
-//        PreparedStatement ps_1 = connection.prepareStatement("insert into msk (MSK) value(?)");
-//
-//        ps.setBytes(1, bos.toByteArray());
-//        ps.executeUpdate();
-//        ps_1.setBytes(1, bos_1.toByteArray());
-//        ps_1.executeUpdate();
-
-//        PreparedStatement ps = connection.prepareStatement("select id,pp from pp ");
-//        ResultSet resultSet = ps.executeQuery();
-//
-//
-//        while(resultSet.next()){
-//            System.out.println(resultSet.getInt(1));
-//            ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(2));
-//            ObjectInputStream ois = new ObjectInputStream(bis);
-//            PP pn = (PP)ois.readObject();
-//            byte[] f_bytes = pn.getF();
-//            byte[] g_bytes = pn.getG();
-//            byte[] Y_bytes = pn.getY();
-//            Element f_1 = G1.newElementFromBytes(f_bytes);
-//            Element g_1 = G1.newElementFromBytes(g_bytes);
-//            Element Y_1 = GT.newElementFromBytes(Y_bytes);
-//            System.out.println(Y_1);
-//        }
-////关闭连接
-//        JDBCUtils.close(resultSet,ps, connection);
+        dao.setup(pp,msk);
     }
 
     @Override
-    public void KeyGen(String id, String attributes[]) {
+    public void getSetup() {
+        pairing = PairingFactory.getPairing("a.properties");
+        PairingFactory.getInstance().setUsePBCWhenPossible(true);
+        if (!pairing.isSymmetric()) {
+            throw new RuntimeException("密钥不对称!");
+        }
+        Zr = pairing.getZr();
+        K = pairing.getG2();
+        G1 = pairing.getG1();
+        GT = pairing.getGT();
+
+        PPAndMSK ppandmsk = commonDao.getSetUp();
+        PP pp = ppandmsk.getPp();
+        MSK msk = ppandmsk.getMsk();
+
+        if(pp != null){
+            f = G1.newElementFromBytes(pp.getF()).getImmutable();
+            g = G1.newElementFromBytes(pp.getG()).getImmutable();
+            Y = GT.newElementFromBytes(pp.getY()).getImmutable();
+        }else{
+            System.out.println("pp为空");
+        }
+
+        if(msk != null){
+            a = Zr.newElementFromBytes(msk.getA()).getImmutable();
+            b = Zr.newElementFromBytes(msk.getB()).getImmutable();
+            lambda = Zr.newElementFromBytes(msk.getLambda()).getImmutable();
+            k1 = K.newElementFromBytes(msk.getK1()).getImmutable();
+            k2 = K.newElementFromBytes(msk.getK2()).getImmutable();
+        }else{
+            System.out.println("msk为空");
+        }
+    }
+
+
+
+
+
+
+    //需把属性去掉
+    @Override
+    public void KeyGen(String id) {
+        List<String> list = commonDao.getUserAttr(id);
+        String[] attributes = list.toArray(new String[list.size()]);
         Element  D1, D1_1, D2, D2_1, D4, xid, Yid;
-        Element[] D3;
         Element t = Zr.newRandomElement().getImmutable();
         Element kappa = Zr.newRandomElement().getImmutable();
         xid = Zr.newRandomElement().getImmutable();
@@ -129,18 +134,19 @@ public class KGCImpl implements KGC {
         Element zeta= Zr.newElementFromBytes(zeta_t2).getImmutable();
 
         D1 = g.powZn(a.mulZn((lambda.add(zeta)).invert())).getImmutable();
-        D1 = D1.mul(g.powZn(b.mul(t)));
-        D1_1 = zeta.getImmutable();
-        D2 = g.powZn(t).getImmutable();
+        D1 = D1.mul(g.powZn(b.mul(t))).getImmutable();
+        D1_1 = zeta.getImmutable().getImmutable();
+        D2 = g.powZn(t).getImmutable().getImmutable();
         D2_1 = g.powZn(lambda.mulZn(t)).getImmutable();
-        D3 = new Element[attributes.length];
-        Element[] pi = new Element[attributes.length];
-        byte[][] D3_byte = new byte[attributes.length][];
+        D3_Map[] D3 = new D3_Map[attributes.length];
         for (int i = 0; i < attributes.length; i++) {
             String md5 = DigestUtils.md5DigestAsHex(attributes[i].getBytes());
-            pi[i] = G1.newElementFromHash(md5.getBytes(), 0, md5.length()).getImmutable();
-            D3[i] = pi[i].powZn((lambda.add(zeta)).mul(t)).getImmutable();
-            D3_byte[i] = D3[i].toBytes();
+            Element pi = G1.newElementFromHash(md5.getBytes(), 0, md5.length()).getImmutable();
+            Element D3_t = pi.powZn((lambda.add(zeta)).mul(t)).getImmutable();
+            D3_Map d3_t = new D3_Map();
+            d3_t.setAttr(attributes[i]);
+            d3_t.setD3(D3_t.toBytes());
+            D3[i] = d3_t;
         }
         D4 = Zr.newRandomElement().getImmutable();
 
@@ -149,20 +155,84 @@ public class KGCImpl implements KGC {
         sk.setD1_1(D1_1.toBytes());
         sk.setD2(D2.toBytes());
         sk.setD2_1(D2_1.toBytes());
-        sk.setD3(D3_byte);
+        sk.setD3(D3);
         sk.setD4(D4.toBytes());
         sk.setXid(xid.toBytes());
         sk.setZeta(zeta_s);
+        sk.setKappa(kappa.toBytes());
 
         PK pk = new PK();
         pk.setYid(Yid.toBytes());
 
-        PKAndSKAndID pkandsk = new PKAndSKAndID();
-        pkandsk.setPk(pk);
-        pkandsk.setSk(sk);
-        pkandsk.setTheta_id(encoded);
+        dao.setPKAndSK(id,pk, sk,encoded);
+    }
 
-        dao.setPKAndSK(id,pkandsk);
+    public boolean KeySanityCheck(SK sk) {
+//        Element D1 = G1.newElementFromBytes(sk.getD1()).getImmutable();
+//        Element D1_1 = Zr.newElementFromBytes(sk.getD1_1()).getImmutable();
+//        Element D2 = G1.newElementFromBytes(sk.getD2()).getImmutable();
+//        Element D2_1 = G1.newElementFromBytes(sk.getD2_1()).getImmutable();
+//        byte[][] d3 = sk.getD3();
+//        Element D3[] = new Element[d3.length];
+//        for (int i = 0; i < D3.length; i++) {
+//            D3[i] = G1.newElementFromBytes(d3[i]).getImmutable();
+//        }
+//        Element D4 = Zr.newElementFromBytes(sk.getD4()).getImmutable();
+//        Element xid = Zr.newElementFromBytes(sk.getXid()).getImmutable();
+//
+//        Element[] pi = new Element[attributes.length];
+//        for (int i = 0; i < attributes.length; i++) {
+//            String md5 = DigestUtils.md5DigestAsHex(attributes[i].getBytes());
+//            pi[i] = G1.newElementFromHash(md5.getBytes(), 0, md5.length()).getImmutable();
+//        }
+//
+//        Element temp1 = pairing.pairing(g,D2_1);
+//        Element temp2 = pairing.pairing(g.powZn(lambda),D2);
+//        boolean b1 = temp1.equals(temp2);
+//
+//        Element temp3 = pairing.pairing(g.powZn(lambda).mul(g.powZn(D1_1)),D1);
+//        Element temp4 = Y.mul(pairing.pairing(D2.powZn(D1_1).mul(D2_1),g.powZn(b)));
+//        boolean b2 = temp3.equals(temp4);
+//        Element pi_sum = pi[0];
+//        Element D3_sum = D3[0];
+//        for (int i = 1; i < D3.length; i++) {
+//            pi_sum = pi_sum.mul(pi[i]);
+//            D3_sum = D3_sum.mul(D3[i]);
+//        }
+//        Element temp5 = pairing.pairing(pi_sum,(D2.powZn(D1_1)).mul(D2_1));
+//        Element temp6 = pairing.pairing(g,D3_sum);
+//        boolean b3 = temp5.equals(temp6);
+//        if(b1 && b2 && b3){
+//            return true;
+//        }
+//        return false;
+        return true;
+    }
+
+
+    public String Trance(SK sk) {
+
+        if(KeySanityCheck(sk)){
+            String zeta = sk.getZeta();
+            Element kappa = Zr.newElementFromBytes(sk.getKappa());
+            byte[] zeta_t2 = Base64.getDecoder().decode(zeta);
+            byte[] theta_id_kappa = Crytpto.SDec(zeta_t2,k2.toBytes());
+            String theta_id_kappa_s = new String(theta_id_kappa);
+            String theta_t = theta_id_kappa_s.replace(kappa.toString(),"");
+            byte[] decoded = Base64.getDecoder().decode(theta_t);
+            byte[] id_t = Crytpto.SDec(decoded,k1.toBytes());
+            String id_revo = new String(id_t);
+            return id_revo;
+        }else{
+            System.out.println("密钥不完整");
+        }
+
+        return null;
+    }
+
+    @Override
+    public void userRevo(byte[] theta_id) {
+
     }
 
 

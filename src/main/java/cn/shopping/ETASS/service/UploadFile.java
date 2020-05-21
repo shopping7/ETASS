@@ -1,8 +1,8 @@
 package cn.shopping.ETASS.service;
 
-import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
+import java.io.File;
 
 public interface UploadFile {
-    void uploadFile(String user_id,String msg,String[] kw);
+    void uploadFile(String user_id, String policy, File file, String[] kw);
 
 }

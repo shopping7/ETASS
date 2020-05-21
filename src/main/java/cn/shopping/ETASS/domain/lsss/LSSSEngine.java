@@ -1,11 +1,15 @@
 package cn.shopping.ETASS.domain.lsss;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 
-public class LSSSEngine {
+public class LSSSEngine implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     public static final String OPS = "(|+&*)";
 
     public LSSSMatrix genMatrix(String policy){

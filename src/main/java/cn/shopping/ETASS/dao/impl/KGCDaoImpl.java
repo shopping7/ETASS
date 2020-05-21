@@ -1,23 +1,46 @@
 package cn.shopping.ETASS.dao.impl;
 
 import cn.shopping.ETASS.dao.KGCDao;
+import cn.shopping.ETASS.domain.KGCUser;
+import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.util.JDBCUtils;
+import cn.shopping.ETASS.util.JDBCUtils_1;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class KGCDaoImpl implements KGCDao {
+
+    private JdbcTemplate template = new JdbcTemplate(JDBCUtils_1.getDataSource());
+
     @Override
-    public void setup(PPAndMSK ppandmsk) {
+    public KGCUser login(String username, String password){
+
+        try {
+            String sql = "select * from kgc_user where username = ? and password = ?";
+            KGCUser user = template.queryForObject(sql,
+                    new BeanPropertyRowMapper<KGCUser>(KGCUser.class),
+                    username, password);
+
+            return user;
+        } catch (DataAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public void setup(PP pp, MSK msk) {
         Connection connection = null;
         PreparedStatement ps = null;
-        PP pp = ppandmsk.getPp();
-        MSK msk = ppandmsk.getMsk();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
         ObjectOutputStream oos = null;
@@ -40,13 +63,11 @@ public class KGCDaoImpl implements KGCDao {
         }
     }
 
+
     @Override
-    public void setPKAndSK(String id,PKAndSKAndID pkandsk) {
+    public void setPKAndSK(String id,PK pk, SK sk,String theta) {
         Connection connection = null;
         PreparedStatement ps = null;
-        PK pk = pkandsk.getPk();
-        SK sk = pkandsk.getSk();
-        String theta = pkandsk.getTheta_id();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
         ObjectOutputStream oos = null;
