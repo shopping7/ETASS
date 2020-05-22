@@ -6,6 +6,7 @@ import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.pv.Attr;
 import cn.shopping.ETASS.domain.pv.PKAndSKAndID;
 import cn.shopping.ETASS.service.CommonService;
+import cn.shopping.ETASS.service.KGC;
 
 import java.util.Iterator;
 import java.util.List;
@@ -106,6 +107,10 @@ public class CommonServiceImpl implements CommonService {
     public void updateUser(String user_id, String username, String[] attr_update) {
         commonDao.updateUsername(user_id,username);
         commonDao.updateUserAttr(user_id,attr_update);
+        commonDao.deletePk(user_id);
+        KGC kgc = new KGCImpl();
+        kgc.getSetup();
+        kgc.KeyGen(user_id);
 
     }
 

@@ -1,5 +1,6 @@
 package cn.shopping.ETASS.dao;
 
+import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import it.unisa.dia.gas.jpbc.Element;
@@ -19,4 +20,5 @@ public interface AlgorithmDao {
 
     void uploadFile(CT ct, VKM vkm, String[] kw_s, LSSSMatrix lsss);
 
+    User login(String username, String password);
 }

@@ -1,20 +1,13 @@
 package cn.shopping.ETASS.web.servlet;
 
-import cn.shopping.ETASS.domain.KGCUser;
 import cn.shopping.ETASS.domain.ResultInfo;
 import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.lsss.LSSSEngine;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
-import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.AlgorithmService;
-import cn.shopping.ETASS.service.CloudServer;
 import cn.shopping.ETASS.service.CommonService;
-import cn.shopping.ETASS.service.UserService;
 import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
-import cn.shopping.ETASS.service.impl.CloudServerImpl;
 import cn.shopping.ETASS.service.impl.CommonServiceImpl;
-import cn.shopping.ETASS.service.impl.UserServiceImpl;
-import it.unisa.dia.gas.jpbc.Element;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -22,13 +15,11 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,14 +44,13 @@ public class UserServlet extends BaseServlet {
             e.printStackTrace();
         }
 
-        UserService us = new UserServiceImpl();
-        User loginUser = us.login(user);
+        User loginUser = algorithmService.login(user);
         ResultInfo info = new ResultInfo();
         //6.判断是否登录成功
         if(loginUser != null){
             //登录成功
             //将用户存入session
-            session.setAttribute("kgc_user",loginUser);
+            session.setAttribute("loginUser",loginUser);
             info.setFlag(true);
 
         }else{
@@ -68,20 +58,29 @@ public class UserServlet extends BaseServlet {
             info.setFlag(false);
             //提示信息
             info.setErrorMsg("用户名或密码错误！");
-//            request.setAttribute("login_msg","用户名或密码错误！");
-            //跳转登录页面
-//            request.getRequestDispatcher("/login.jsp").forward(request,response);
 
         }
         writeValue(response,info);
     }
 
+    public void logout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("utf-8");
+
+        HttpSession session = request.getSession();
+        session.removeAttribute("loginUser");
+        response.sendRedirect("/web/login.html");
+    }
 
     public void uploadFile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("utf-8");
 
-        String user_id="Alice";
+        HttpSession session = request.getSession();
+        User loginUser = (User)session.getAttribute("loginUser");
+        if(loginUser == null){
+            response.sendRedirect("/web/login.html");
+        }
 
+        String user_id= loginUser.getUser_id();
         String policy = null;
         String upload_kw = null;
         ResultInfo info = new ResultInfo();
@@ -190,84 +189,17 @@ public class UserServlet extends BaseServlet {
         writeValue(response,info);
     }
 
-    public void getFile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.setCharacterEncoding("UTF-8");
-        String id = "Alice";
-
-        AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
-        CommonService commonService = new CommonServiceImpl();
-        algorithmService.setup();
-        PKAndSKAndID pkAndsk = commonService.getPKAndSKAndID(id);
-        SK sk = pkAndsk.getSk();
-        String theta_id = pkAndsk.getTheta_id();
-        Element Did = algorithmService.getDid(theta_id);
-
-        //2 根据用户输入的关键字生成陷门
-        String file_kw = request.getParameter("file_kw");
-        System.out.println(file_kw);
-        String[] KW1 = file_kw.split(",");
-
-        TKW tkw = algorithmService.Trapdoor(sk,KW1);
-
-
-        //3 云服务器寻找对应的文件
-        CloudServer CS = new CloudServerImpl();
-        CS.setup();
-        String[] attrs = CS.getAttr(id);
-        List<Encrypt_File> file_list = CS.getFile(KW1);
-        int i = 0;
-        response.setCharacterEncoding("UTF-8"); //设置编码字符
-        response.setContentType("application/octet-stream;charset=UTF-8"); //设置下载内容类型
-        response.setHeader("Content-disposition", "attachment;filename="+"decrypt.txt");//设置下载的文件名称
-        OutputStream out = response.getOutputStream();
-        if(file_list != null){
-            for (Encrypt_File file : file_list) {
-                CT ct = file.getCt();
-                VKM vkm = file.getVkm();
-                LSSSMatrix lsss = file.getLsss();
-
-                LSSSMatrix lsssD1 = lsss.extract(attrs);
-                int lsssIndex[] = lsssD1.getIndex();
-                CTout ctout = CS.Transform(ct, tkw, Did,lsssD1,lsssIndex);
-
-                //4 云服务传送ctout给用户，用户解密
-                if(ctout != null){
-                    String filename = "/upload/decrypt"+i+".txt";
-                    i++;
-                    algorithmService.Dec(ctout, sk, vkm,filename);
-
-                       //创建页面返回方式为输出流，会自动弹出下载框
-
-
-                    //方法1-1：IO字节流下载，用于小文件
-                    System.out.println("字节流下载");
-                    InputStream is = new FileInputStream(filename);  //创建文件输入流
-                    byte[] Buffer = new byte[2048];  //设置每次读取数据大小，即缓存大小
-                    int size = 0;  //用于计算缓存数据是否已经读取完毕，如果数据已经读取完了，则会返回-1
-                    while((size=is.read(Buffer)) != -1){  //循环读取数据，如果数据读取完毕则返回-1
-                        out.write(Buffer, 0, size); //将每次读取到的数据写入客户端
-                    }
-                    is.close();
-                }
-            }
-        }else{
-//
-            System.out.println("无匹配文件");
-        }
-
-
-
-
-    }
-
     public void getUserAttr(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("utf-8");
 
 
         HttpSession session = request.getSession();
-
-        String id = "Alice";
-        String username = "Alice";
+        User loginUser = (User)session.getAttribute("loginUser");
+        if(loginUser == null){
+            response.sendRedirect("/web/login.html");
+        }
+        String id = loginUser.getUser_id();
+        String username = loginUser.getUsername();
         List<String> userAttr = common.getUserAttr(id);
         User user = new User();
         user.setUsername(username);
@@ -280,7 +212,12 @@ public class UserServlet extends BaseServlet {
     public void userEdit(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("utf-8");
 
-        String id = "Alice";
+        HttpSession session = request.getSession();
+        User loginUser = (User)session.getAttribute("loginUser");
+        if(loginUser == null){
+            response.sendRedirect("/web/login.html");
+        }
+        String id = loginUser.getUser_id();
         String username = request.getParameter("username");
         System.out.println(username);
 

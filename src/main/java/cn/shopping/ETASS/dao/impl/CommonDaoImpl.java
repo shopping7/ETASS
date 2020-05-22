@@ -250,5 +250,11 @@ public class CommonDaoImpl implements CommonDao {
         }
     }
 
+    @Override
+    public void deletePk(String user_id) {
+        String sql = "delete from user_basic where user_id = ?";
+        template.update(sql,user_id);
+    }
+
 
 }

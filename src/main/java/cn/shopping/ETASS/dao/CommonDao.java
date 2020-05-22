@@ -43,6 +43,8 @@ public interface CommonDao {
 
     void updateUserAttr(String user_id, String[] attr_update);
 
+    void deletePk(String user_id);
+
 //    User getOneUser(String user_id);
 
 }

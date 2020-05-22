@@ -1,4 +1,4 @@
-package cn.shopping.ETASS.dao.impl;
+package cn.shopping.ETASS.dao.test;
 
 import cn.shopping.ETASS.domain.lsss.LSSSEngine;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;

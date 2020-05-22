@@ -1,4 +1,4 @@
-package cn.shopping.ETASS.dao.impl;
+package cn.shopping.ETASS.dao.test;
 
 import cn.shopping.ETASS.domain.pv.PK;
 import cn.shopping.ETASS.domain.pv.PKAndSKAndID;

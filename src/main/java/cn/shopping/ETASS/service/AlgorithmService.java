@@ -9,8 +9,9 @@ import java.io.File;
 import java.util.List;
 
 public interface AlgorithmService {
-    void setup();
+    User login(User user);
 
+    void setup();
 
     void CreateUL(String id, PK pk);
 

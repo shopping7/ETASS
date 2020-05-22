@@ -1,5 +1,19 @@
 jQuery(document).ready(function() {
 
+    $('#btn_sub').click(function () {
+        //2.发送ajax请求，提交表单数据
+        $.post("KGC/login",$("#loginForm").serialize(),function (data) {
+            //data : {flag:false,errorMsg:''}
+            if(data.flag){
+                //登录成功
+                location.href="system.html";
+            }else{
+                //登录失败
+                $("#errorMsg").html(data.errorMsg);
+            }
+        });
+    });
+
     jQuery.get("KGC/getAllAttr",{},function (attrs) {
 
         //attr.html里显示所有属性

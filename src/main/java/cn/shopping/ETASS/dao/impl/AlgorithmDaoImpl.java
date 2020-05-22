@@ -1,10 +1,15 @@
 package cn.shopping.ETASS.dao.impl;
 
 import cn.shopping.ETASS.dao.AlgorithmDao;
+import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.util.JDBCUtils;
+import cn.shopping.ETASS.util.JDBCUtils_1;
 import it.unisa.dia.gas.jpbc.Element;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.*;
 import java.sql.Connection;
@@ -14,7 +19,7 @@ import java.sql.SQLException;
 
 public class AlgorithmDaoImpl implements AlgorithmDao {
 
-
+    private JdbcTemplate template = new JdbcTemplate(JDBCUtils_1.getDataSource());
 
     @Override
     public void addUL(String encoded, Element Did){
@@ -156,78 +161,21 @@ public class AlgorithmDaoImpl implements AlgorithmDao {
 
     }
 
-//    @Override
-//    public void upload(CTAndVKM ctandvkm) {
-//        Connection connection = null;
-//        PreparedStatement ps = null;
-//        CT ct = ctandvkm.getCt();
-//        VKM vkm = ctandvkm.getVkm();
-//        String[] kw_s = ctandvkm.getKW();
-//        String kw = kw_s[0];
-//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//        ByteArrayOutputStream bos_1 = new ByteArrayOutputStream();
-//        ObjectOutputStream oos = null;
-//        ObjectOutputStream oos_1 = null;
-//        try {
-//            oos = new ObjectOutputStream(bos);
-//            oos.writeObject(ct);
-//            oos_1 = new ObjectOutputStream(bos_1);
-//            oos_1.writeObject(vkm);
-//            connection = JDBCUtils.getConnection();
-//            ps = connection.prepareStatement("insert into file (kw,ct,vkm) value(?,?,?)");
-//            ps.setString(1, kw);
-//            ps.setBytes(2, bos.toByteArray());
-//            ps.setBytes(3,bos_1.toByteArray());
-//            ps.executeUpdate();
-//
-//        } catch (IOException | SQLException e) {
-//            e.printStackTrace();
-//        }finally {
-//            JDBCUtils.close(ps, connection);
-//        }
-//
-//    }
+    @Override
+    public User login(String username, String password){
 
+        try {
+            String sql = "select * from user_login where username = ? and password = ?";
+            User user = template.queryForObject(sql,
+                    new BeanPropertyRowMapper<User>(User.class),
+                    username, password);
 
+            return user;
+        } catch (DataAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-
-
-//    public void test() throws Exception {
-
-
-
-
-        //people序列化存进数据库
-//            People p = new People();
-//            p.setName("哈哈".getBytes());
-//            p.setAge(10);
-//            p.setBirthday(Calendar.getInstance().getTime());
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            ObjectOutputStream oos = new ObjectOutputStream(bos);
-//            oos.writeObject(p);
-//
-//            Connection connection = JDBCUtils.getConnection();
-//            PreparedStatement ps = connection.prepareStatement("insert into people (people) value(?)");
-//
-//            ps.setBytes(1, bos.toByteArray());
-//            ps.executeUpdate();
-//
-//            ps = connection.prepareStatement("select id,people from people");
-//            ResultSet resultSet = ps.executeQuery();
-//
-//
-//            while(resultSet.next()){
-//                System.out.println(resultSet.getInt(1));
-//                ByteArrayInputStream bis = new ByteArrayInputStream(resultSet.getBytes(2));
-//                ObjectInputStream ois = new ObjectInputStream(bis);
-//                People pn = (People) ois.readObject();
-//                System.out.println(pn.getName());
-//                System.out.println(pn.getAge());
-//                System.out.println(pn.getBirthday());
-//            }
-////关闭连接
-//            JDBCUtils.close(resultSet,ps, connection);
-
-//        }
 
 }

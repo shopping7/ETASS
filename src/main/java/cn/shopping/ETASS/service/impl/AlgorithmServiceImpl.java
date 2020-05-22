@@ -41,6 +41,11 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     }
 
 
+    @Override
+    public User login(User user) {
+        return dao.login(user.getUsername(),user.getPassword());
+    }
+
     public void setup(){
         //kgc分配pp和msk
 //        Element a_1, b_1, g_1, Y_1, k1_1, k2_1,lambda_1, f_1;
