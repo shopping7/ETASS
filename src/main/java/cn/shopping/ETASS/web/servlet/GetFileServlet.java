@@ -1,19 +1,20 @@
 package cn.shopping.ETASS.web.servlet;
 
 
-import cn.shopping.ETASS.domain.ResultInfo;
+
 import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.CloudServer;
 import cn.shopping.ETASS.service.CommonService;
-import cn.shopping.ETASS.service.GetFile;
 import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
 import cn.shopping.ETASS.service.impl.CloudServerImpl;
 import cn.shopping.ETASS.service.impl.CommonServiceImpl;
-import cn.shopping.ETASS.service.impl.GetFileImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unisa.dia.gas.jpbc.Element;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -40,18 +41,92 @@ public class GetFileServlet extends HttpServlet {
         }
         String id = loginUser.getUser_id();
 
-        AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
-        CommonService commonService = new CommonServiceImpl();
-        algorithmService.setup();
-        PKAndSKAndID pkAndsk = commonService.getPKAndSKAndID(id);
-        SK sk = pkAndsk.getSk();
-        String theta_id = pkAndsk.getTheta_id();
-        Element Did = algorithmService.getDid(theta_id);
+        String[] KW1 = new String[0];
+        String theta_id = null;
+        SK sk = null;
+        try{
+//            创建DiskFileItemFactory工厂对象
+            DiskFileItemFactory factory=new DiskFileItemFactory();
+//            设置文件缓存目录，如果该文件夹不存在则创建一个
+            File f=new File("/upload/");
+            if (!f.exists()){
+                f.mkdirs();
+            }
+            factory.setRepository(f);
+//            创建ServletFileUpload对象
+            ServletFileUpload fileUpload=new ServletFileUpload(factory);
+//            设置字符编码
+            fileUpload.setHeaderEncoding("utf-8");
+//            解析request，将form表单的各个字段封装为FileItem对象
+            List<FileItem> fileItems = fileUpload.parseRequest(request);
+//            遍历List集合
+            for (FileItem fileItem:fileItems) {
+//            判断是否为普通字段
+                if (fileItem.isFormField()) {
+//                    获取字段名称
+                    String file_kw = fileItem.getString("utf-8");
+                    System.out.println(file_kw);
+                    KW1 = file_kw.split(",");
 
-        //2 根据用户输入的关键字生成陷门
-        String file_kw = request.getParameter("file_kw");
-        System.out.println(file_kw);
-        String[] KW1 = file_kw.split(",");
+                } else {
+                    String name = fileItem.getFieldName();
+                    if (name.equals("sk")) {
+
+//                        String filepath = "/upload/upload_sk.txt";
+//                        File file = new File(filepath);
+//                        file.getParentFile().mkdirs();
+//                        file.createNewFile();
+                        InputStream in = fileItem.getInputStream();
+//                        FileOutputStream out=new FileOutputStream(file);
+//                        byte[] bytes=new byte[1024];//每次读取一个字节
+//                        int len;
+//                        开始读取上传文件的字节，并将其输出到服务器端的上传文件输出流中
+//                        while ((len=in.read(bytes))>0)
+//                            out.write(bytes,0,len);
+//                        in.close();
+//                        out.close();
+
+//                        ObjectInputStream is = new ObjectInputStream(new FileInputStream(file));
+                        ObjectInputStream is = new ObjectInputStream(in);
+                        sk = (SK) is.readObject();
+                        in.close();
+//                        file.delete();
+                        fileItem.delete();
+                    } else if (name.equals("theta_id")) {
+//                        String filepath = "/upload/upload_theta_id.txt";
+//                        File file = new File(filepath);
+//                        file.getParentFile().mkdirs();
+//                        file.createNewFile();
+                        InputStream in = fileItem.getInputStream();
+//                        FileOutputStream out=new FileOutputStream(file);
+//                        byte[] bytes=new byte[1024];//每次读取一个字节
+//                        int len;
+//                        开始读取上传文件的字节，并将其输出到服务器端的上传文件输出流中
+//                        while ((len=in.read(bytes))>0)
+//                            out.write(bytes,0,len);
+//                        ObjectInputStream is = new ObjectInputStream(new FileInputStream(file));
+                        ObjectInputStream is = new ObjectInputStream(in);
+                        theta_id = (String) is.readObject();
+                        in.close();
+//                        file.delete();
+                        fileItem.delete();
+                    }
+                }
+            }
+        } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (FileUploadException e) {
+                e.printStackTrace();
+            }
+
+        CommonService common = new CommonServiceImpl();
+        PKAndSKAndID pkAndSKAndID = common.getPKAndSKAndID(id);
+        SK sk_1 = pkAndSKAndID.getSk();
+        boolean b1 = sk.equals(sk_1);
+        System.out.println(b1);
+        AlgorithmServiceImpl algorithmService = new AlgorithmServiceImpl();
+        algorithmService.setup();
+        Element Did = algorithmService.getDid(theta_id);
 
         TKW tkw = algorithmService.Trapdoor(sk,KW1);
 
@@ -127,7 +202,7 @@ public class GetFileServlet extends HttpServlet {
             }
         }
         if(zipFile.exists()){
-            downImg(response,zipFileName,strZipPath);
+            downFile(response,zipFileName,strZipPath);
             zipFile.delete();
         }
 
@@ -138,7 +213,7 @@ public class GetFileServlet extends HttpServlet {
         doPost(request,response);
     }
 
-    public void downImg(HttpServletResponse response,String filename,String path ){
+    public void downFile(HttpServletResponse response,String filename,String path ){
         if (filename != null) {
             FileInputStream is = null;
             BufferedInputStream bs = null;

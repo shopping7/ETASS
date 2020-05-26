@@ -12,6 +12,8 @@ public interface KGCDao {
 
     void setup(PP pp, MSK msk);
 
+    void deleteSystem();
+
 
     void setPKAndSK(String id, PK pk, SK sk, String theta_id);
 }

@@ -45,6 +45,8 @@ public interface CommonDao {
 
     void deletePk(String user_id);
 
+    String getUsername(String id);
+
 //    User getOneUser(String user_id);
 
 }

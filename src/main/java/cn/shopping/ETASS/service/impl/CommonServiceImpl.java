@@ -114,5 +114,11 @@ public class CommonServiceImpl implements CommonService {
 
     }
 
+    @Override
+    public String getUsername(String id) {
+        return commonDao.getUsername(id);
+
+    }
+
 
 }

@@ -6,7 +6,6 @@ import cn.shopping.ETASS.dao.KGCDao;
 import cn.shopping.ETASS.dao.impl.CommonDaoImpl;
 import cn.shopping.ETASS.dao.impl.KGCDaoImpl;
 import cn.shopping.ETASS.domain.KGCUser;
-import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.KGC;
 import it.unisa.dia.gas.jpbc.Element;
@@ -16,7 +15,6 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.springframework.util.DigestUtils;
 
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.List;
 
 public class KGCImpl implements KGC {
@@ -108,12 +106,13 @@ public class KGCImpl implements KGC {
         }
     }
 
+    @Override
+    public void updateSystem() {
+        dao.deleteSystem();
+        setup();
+    }
 
 
-
-
-
-    //需把属性去掉
     @Override
     public void KeyGen(String id) {
         List<String> list = commonDao.getUserAttr(id);
@@ -164,53 +163,52 @@ public class KGCImpl implements KGC {
         PK pk = new PK();
         pk.setYid(Yid.toBytes());
 
+        PKAndSKAndID pkAndSKAndID = new PKAndSKAndID();
+        pkAndSKAndID.setSk(sk);
+        pkAndSKAndID.setPk(pk);
+        pkAndSKAndID.setTheta_id(encoded);
         dao.setPKAndSK(id,pk, sk,encoded);
+//        return pkAndSKAndID;
     }
 
     public boolean KeySanityCheck(SK sk) {
-//        Element D1 = G1.newElementFromBytes(sk.getD1()).getImmutable();
-//        Element D1_1 = Zr.newElementFromBytes(sk.getD1_1()).getImmutable();
-//        Element D2 = G1.newElementFromBytes(sk.getD2()).getImmutable();
-//        Element D2_1 = G1.newElementFromBytes(sk.getD2_1()).getImmutable();
-//        byte[][] d3 = sk.getD3();
-//        Element D3[] = new Element[d3.length];
-//        for (int i = 0; i < D3.length; i++) {
-//            D3[i] = G1.newElementFromBytes(d3[i]).getImmutable();
-//        }
-//        Element D4 = Zr.newElementFromBytes(sk.getD4()).getImmutable();
-//        Element xid = Zr.newElementFromBytes(sk.getXid()).getImmutable();
-//
-//        Element[] pi = new Element[attributes.length];
-//        for (int i = 0; i < attributes.length; i++) {
-//            String md5 = DigestUtils.md5DigestAsHex(attributes[i].getBytes());
-//            pi[i] = G1.newElementFromHash(md5.getBytes(), 0, md5.length()).getImmutable();
-//        }
-//
-//        Element temp1 = pairing.pairing(g,D2_1);
-//        Element temp2 = pairing.pairing(g.powZn(lambda),D2);
-//        boolean b1 = temp1.equals(temp2);
-//
-//        Element temp3 = pairing.pairing(g.powZn(lambda).mul(g.powZn(D1_1)),D1);
-//        Element temp4 = Y.mul(pairing.pairing(D2.powZn(D1_1).mul(D2_1),g.powZn(b)));
-//        boolean b2 = temp3.equals(temp4);
-//        Element pi_sum = pi[0];
-//        Element D3_sum = D3[0];
-//        for (int i = 1; i < D3.length; i++) {
-//            pi_sum = pi_sum.mul(pi[i]);
-//            D3_sum = D3_sum.mul(D3[i]);
-//        }
-//        Element temp5 = pairing.pairing(pi_sum,(D2.powZn(D1_1)).mul(D2_1));
-//        Element temp6 = pairing.pairing(g,D3_sum);
-//        boolean b3 = temp5.equals(temp6);
-//        if(b1 && b2 && b3){
-//            return true;
-//        }
-//        return false;
-        return true;
+        Element D1 = G1.newElementFromBytes(sk.getD1()).getImmutable();
+        Element D1_1 = Zr.newElementFromBytes(sk.getD1_1()).getImmutable();
+        Element D2 = G1.newElementFromBytes(sk.getD2()).getImmutable();
+        Element D2_1 = G1.newElementFromBytes(sk.getD2_1()).getImmutable();
+        D3_Map[] D3 = sk.getD3();
+        Element D4 = Zr.newElementFromBytes(sk.getD4()).getImmutable();
+        Element xid = Zr.newElementFromBytes(sk.getXid()).getImmutable();
+
+        Element temp1 = pairing.pairing(g,D2_1).getImmutable();
+        Element temp2 = pairing.pairing(g.powZn(lambda),D2).getImmutable();
+        boolean b2 = temp1.equals(temp2);
+
+        Element temp3 = pairing.pairing(g.powZn(lambda).mul(g.powZn(D1_1)),D1).getImmutable();
+        Element temp4 = Y.mul(pairing.pairing(D2.powZn(D1_1).mul(D2_1),g.powZn(b))).getImmutable();
+        boolean b3 = temp3.equals(temp4);
+
+
+        Element D3_sum = G1.newElementFromBytes(D3[0].getD3()).getImmutable().getImmutable();
+        String md5 = DigestUtils.md5DigestAsHex(D3[0].getAttr().getBytes());
+        Element pi_sum = G1.newElementFromHash(md5.getBytes(), 0, md5.length()).getImmutable();
+        for (int i = 1; i < D3.length; i++) {
+            String pi_t1 = DigestUtils.md5DigestAsHex(D3[i].getAttr().getBytes());
+            Element pi_t2 = G1.newElementFromHash(pi_t1.getBytes(), 0, pi_t1.length()).getImmutable();
+            pi_sum = pi_sum.mul(pi_t2);
+            D3_sum = D3_sum.mul(G1.newElementFromBytes(D3[i].getD3()));
+        }
+        Element temp5 = pairing.pairing(pi_sum,(D2.powZn(D1_1)).mul(D2_1)).getImmutable();
+        Element temp6 = pairing.pairing(g,D3_sum).getImmutable();
+        boolean b4 = temp5.equals(temp6);
+        if(b2 && b3 && b4){
+            return true;
+        }
+        return false;
     }
 
 
-    public String Trance(SK sk) {
+    public TranceID Trance(SK sk) {
 
         if(KeySanityCheck(sk)){
             String zeta = sk.getZeta();
@@ -222,9 +220,12 @@ public class KGCImpl implements KGC {
             byte[] decoded = Base64.getDecoder().decode(theta_t);
             byte[] id_t = Crytpto.SDec(decoded,k1.toBytes());
             String id_revo = new String(id_t);
-            return id_revo;
+            TranceID trance = new TranceID();
+            trance.setId(id_revo);
+            trance.setTheta_id(theta_t);
+            return trance;
         }else{
-            System.out.println("密钥不完整");
+            System.out.println("密钥结构不完整");
         }
 
         return null;

@@ -17,6 +17,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CommonDaoImpl implements CommonDao {
     private JdbcTemplate template = new JdbcTemplate(JDBCUtils_1.getDataSource());
@@ -254,6 +255,14 @@ public class CommonDaoImpl implements CommonDao {
     public void deletePk(String user_id) {
         String sql = "delete from user_basic where user_id = ?";
         template.update(sql,user_id);
+    }
+
+    @Override
+    public String getUsername(String id) {
+        String sql = "select username from user_login where user_id = ?";
+        Map<String, Object> map = template.queryForMap(sql, id);
+        String username = (String)map.get("username");
+        return username;
     }
 
 

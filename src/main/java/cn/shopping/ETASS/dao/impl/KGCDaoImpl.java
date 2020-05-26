@@ -63,6 +63,12 @@ public class KGCDaoImpl implements KGCDao {
         }
     }
 
+    @Override
+    public void deleteSystem() {
+        String sql = "delete from setup";
+        template.update(sql);
+    }
+
 
     @Override
     public void setPKAndSK(String id,PK pk, SK sk,String theta) {

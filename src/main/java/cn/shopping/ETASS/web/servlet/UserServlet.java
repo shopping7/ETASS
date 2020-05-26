@@ -4,6 +4,9 @@ import cn.shopping.ETASS.domain.ResultInfo;
 import cn.shopping.ETASS.domain.User;
 import cn.shopping.ETASS.domain.lsss.LSSSEngine;
 import cn.shopping.ETASS.domain.lsss.LSSSMatrix;
+import cn.shopping.ETASS.domain.pv.PK;
+import cn.shopping.ETASS.domain.pv.PKAndSKAndID;
+import cn.shopping.ETASS.domain.pv.SK;
 import cn.shopping.ETASS.service.AlgorithmService;
 import cn.shopping.ETASS.service.CommonService;
 import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
@@ -71,9 +74,81 @@ public class UserServlet extends BaseServlet {
         response.sendRedirect("/web/login.html");
     }
 
+    public void getPKAndSK(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("utf-8");
+        HttpSession session = request.getSession();
+        User loginUser = (User)session.getAttribute("loginUser");
+        if(loginUser == null){
+            response.sendRedirect("/web/login.html");
+        }
+
+        String user_id= loginUser.getUser_id();
+        PKAndSKAndID pkAndSKAndID = common.getPKAndSKAndID(user_id);
+        PK pk = pkAndSKAndID.getPk();
+        SK sk = pkAndSKAndID.getSk();
+        String theta_id = pkAndSKAndID.getTheta_id();
+        session.setAttribute("pk",pk);
+        session.setAttribute("sk",sk);
+        session.setAttribute("theta_id",theta_id);
+    }
+
+    public void getPK(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("utf-8");
+        HttpSession session = request.getSession();
+        PK pk = (PK)session.getAttribute("pk");
+        String filepath = "/upload/pk.txt";
+        try {
+            ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(filepath));
+            os.writeObject(pk);
+            os.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        downFile(response,"pk.txt",filepath);
+    }
+
+    public void getSK(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("utf-8");
+        HttpSession session = request.getSession();
+        SK sk = (SK)session.getAttribute("sk");
+        String filepath = "/upload/sk.txt";
+//        String filepath = "C:\\Users\\shopping\\Documents\\test\\sk.txt";
+        try {
+            ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(filepath));
+            os.writeObject(sk);
+            os.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        downFile(response,"sk.txt",filepath);
+    }
+
+    public void getTheta_id(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("utf-8");
+        HttpSession session = request.getSession();
+        String theta_id = (String)session.getAttribute("theta_id");
+        String filepath = "/upload/theta_id.txt";
+//        String filepath = "C:\\Users\\shopping\\Documents\\test\\theta_id.txt";
+        try {
+            ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(filepath));
+            os.writeObject(theta_id);
+            os.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        downFile(response,"theta_id.txt",filepath);
+    }
+
+
     public void uploadFile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("utf-8");
-
+        response.setCharacterEncoding("utf-8");
         HttpSession session = request.getSession();
         User loginUser = (User)session.getAttribute("loginUser");
         if(loginUser == null){
@@ -83,9 +158,8 @@ public class UserServlet extends BaseServlet {
         String user_id= loginUser.getUser_id();
         String policy = null;
         String upload_kw = null;
-        ResultInfo info = new ResultInfo();
         try{
-            response.setContentType("text/html;charset=utf-8");
+
 //            创建DiskFileItemFactory工厂对象
             DiskFileItemFactory factory=new DiskFileItemFactory();
 //            设置文件缓存目录，如果该文件夹不存在则创建一个
@@ -100,8 +174,6 @@ public class UserServlet extends BaseServlet {
             fileUpload.setHeaderEncoding("utf-8");
 //            解析request，将form表单的各个字段封装为FileItem对象
             List<FileItem> fileItems = fileUpload.parseRequest(request);
-//            获取字符流
-            PrintWriter writer=response.getWriter();
 //            遍历List集合
             for (FileItem fileItem:fileItems) {
 //            判断是否为普通字段
@@ -168,12 +240,10 @@ public class UserServlet extends BaseServlet {
                                 algorithmService.setup();
                                 algorithmService.Enc(user_id,file, kw, lsss);
                                 file.delete();
-                                info.setFlag(true);
-                                info.setSuccessMsg("上传成功");
+                                response.getOutputStream().write("success".getBytes());
                             }else{
                                 System.out.println("policy为空");
-                                info.setFlag(false);
-                                info.setErrorMsg("上传失败");
+                                response.getOutputStream().write("fail".getBytes());
                             }
 
                         }
@@ -185,8 +255,6 @@ public class UserServlet extends BaseServlet {
         }catch (Exception e){
             throw new RuntimeException(e);
         }
-
-        writeValue(response,info);
     }
 
     public void getUserAttr(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -199,7 +267,7 @@ public class UserServlet extends BaseServlet {
             response.sendRedirect("/web/login.html");
         }
         String id = loginUser.getUser_id();
-        String username = loginUser.getUsername();
+        String username = common.getUsername(id);
         List<String> userAttr = common.getUserAttr(id);
         User user = new User();
         user.setUsername(username);
@@ -211,7 +279,7 @@ public class UserServlet extends BaseServlet {
 
     public void userEdit(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("utf-8");
-
+        response.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         User loginUser = (User)session.getAttribute("loginUser");
         if(loginUser == null){
@@ -222,10 +290,7 @@ public class UserServlet extends BaseServlet {
         System.out.println(username);
 
         common.editUsername(id, username);
-        ResultInfo info = new ResultInfo();
-        info.setFlag(true);
-        info.setSuccessMsg("修改成功");
-        writeValue(response,info);
+        response.getOutputStream().write("修改成功".getBytes());
     }
 
 

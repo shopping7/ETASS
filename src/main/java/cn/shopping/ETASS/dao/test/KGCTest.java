@@ -2,6 +2,7 @@ package cn.shopping.ETASS.dao.test;
 
 import cn.shopping.ETASS.domain.pv.PKAndSKAndID;
 import cn.shopping.ETASS.domain.pv.SK;
+import cn.shopping.ETASS.domain.pv.TranceID;
 import cn.shopping.ETASS.service.CommonService;
 import cn.shopping.ETASS.service.KGC;
 import cn.shopping.ETASS.service.impl.CommonServiceImpl;
@@ -31,10 +32,10 @@ public class KGCTest {
         //4 追溯恶意用户id
         PKAndSKAndID alice = service.getPKAndSKAndID("Alice");
         SK sk = alice.getSk();
-        String id = kgc.Trance(sk);
+        TranceID id = kgc.Trance(sk);
 
         if(id != null){
-            System.out.println(id);
+            System.out.println(id.getId());
         }else{
             System.out.println("追溯id失败");
         }

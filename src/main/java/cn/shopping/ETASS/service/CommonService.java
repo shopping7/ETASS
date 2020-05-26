@@ -37,4 +37,6 @@ public interface CommonService {
     User getOneUser(String user_id);
 
     void updateUser(String user_id, String username, String[] attr_update);
+
+    String getUsername(String id);
 }

@@ -29,7 +29,7 @@ public class AlgoGetFileTest {
         Element Did = algorithmService.getDid(theta_id);
 
         //2 根据用户输入的关键字生成陷门
-        String[] KW1 = {"福建"};
+        String[] KW1 = {"测试","Alice"};
 
         TKW tkw = algorithmService.Trapdoor(sk,KW1);
 

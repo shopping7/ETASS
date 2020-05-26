@@ -3,10 +3,7 @@ package cn.shopping.ETASS.web.servlet;
 import cn.shopping.ETASS.domain.KGCUser;
 import cn.shopping.ETASS.domain.ResultInfo;
 import cn.shopping.ETASS.domain.User;
-import cn.shopping.ETASS.domain.pv.Attr;
-import cn.shopping.ETASS.domain.pv.PK;
-import cn.shopping.ETASS.domain.pv.PKAndSKAndID;
-import cn.shopping.ETASS.domain.pv.UserAlter;
+import cn.shopping.ETASS.domain.pv.*;
 import cn.shopping.ETASS.service.AlgorithmService;
 import cn.shopping.ETASS.service.CommonService;
 import cn.shopping.ETASS.service.KGC;
@@ -14,13 +11,14 @@ import cn.shopping.ETASS.service.impl.AlgorithmServiceImpl;
 import cn.shopping.ETASS.service.impl.CommonServiceImpl;
 import cn.shopping.ETASS.service.impl.KGCImpl;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.fileupload.FileItem;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
@@ -81,8 +79,10 @@ public class KGCServlet extends BaseServlet {
     }
 
     public void addAttr(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setCharacterEncoding("UTF-8");
         String attr_name = request.getParameter("attr_name");
         common.addAttr(attr_name);
+        response.getOutputStream().write("success".getBytes());
     }
 
     public void getAllUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -104,16 +104,17 @@ public class KGCServlet extends BaseServlet {
     }
 
     public void alterUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setCharacterEncoding("UTF-8");
         String user_id = request.getParameter("user_id");
         String username = request.getParameter("username");
         String[] attr_update = request.getParameterValues("user_attr");
         common.updateUser(user_id,username,attr_update);
-
+        response.getOutputStream().write("修改成功".getBytes());
     }
 
     public void addUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("utf-8");
-
+        response.setCharacterEncoding("UTF-8");
         String username = request.getParameter("username");
         String user_id = request.getParameter("user_id");
         String[] attribute=request.getParameterValues("attribute");
@@ -141,11 +142,7 @@ public class KGCServlet extends BaseServlet {
         algorithmService.setup();
         algorithmService.CreateUL(user_id,pk);
 
-        response.setContentType("application/json;charset=utf-8");
-        ResultInfo info = new ResultInfo();
-        info.setSuccessMsg("添加成功");
-
-        writeValue(response,info);
+        response.getOutputStream().write("添加成功".getBytes());
     }
 
     public void deleteUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -158,6 +155,37 @@ public class KGCServlet extends BaseServlet {
 
 
     public void updateSystem(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        kgc.updateSystem();
+        response.getOutputStream().write("success".getBytes());
+    }
 
+    public void trance(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("utf-8");
+        List<FileItem> fileItems = getFormItem(request);
+        for (FileItem fileItem : fileItems) {
+//            判断是否为文件字段
+            if (!fileItem.isFormField()) {
+                String name = fileItem.getFieldName();
+                if (name.equals("sk_revo")) {
+                    //获取上传的文件名
+                    InputStream in = fileItem.getInputStream();
+                    ObjectInputStream is = new ObjectInputStream(in);
+                    try {
+                        kgc.getSetup();
+                        SK sk = (SK) is.readObject();
+
+                        TranceID trance = kgc.Trance(sk);
+                        System.out.println(trance.getId());
+                        String id = trance.getId();
+//                        writeValue(response,id);
+                        response.getOutputStream().write(id.getBytes());
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    in.close();
+                    fileItem.delete();
+                }
+            }
+        }
     }
 }
